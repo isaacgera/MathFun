@@ -386,7 +386,7 @@ export function renderSetup(container, { canCancel = false }, handlers) {
     const isLast = step === steps.length - 1;
     const backLabel = step === 0 ? (canCancel ? 'Cancel' : '') : '\u2190 Back';
     container.innerHTML = `
-      <h2 tabindex="-1">Create your player</h2>
+      <h2 tabindex="-1">Create your profile</h2>
       ${stepDots()}
       <div class="setup wiz-step">
         ${body()}

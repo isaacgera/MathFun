@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Built & deployed (v1.0.1)
+- **Status:** Built (v1.0.4) - pending push (deployed live is still v1.0.0)
 - **Live:** https://isaacgera.github.io/MathFun/
 - **Description:** Playful times-tables game for kids 5-15 (multiplication 1x-20x; extendable to +/-/div later). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
@@ -99,3 +99,56 @@ mobile app, though it was fine on Live Server.
   all changed files pass diagnostics.
 - **To ship:** commit + push via GitHub Desktop; installed users get it on next launch once the
   new service worker activates (may take one reload).
+
+## Theme still not switching - stale-cache fix - v1.0.2 - 02 Sep 2026
+Isaac reported the theme toggle still didn't switch after v1.0.1.
+- **Investigation:** fetched the live styles.css - it **already contained** the v1.0.1
+  `[data-theme="light"]` fix, so the push had landed and the CSS + JS theme logic are correct.
+  Concluded the remaining cause is a **stale service-worker cache**: the old cache-first SW
+  kept replaying the previous bundle on the hosted/installed PWA, so the device never ran the
+  fixed code even though the server had it. (Classic PWA update trap; a cache-first SW only
+  updates after the new worker activates, which can need >1 reload.)
+- **Fix:**
+  - `sw.js` rewritten to **network-first** for same-origin GETs (fetch fresh + refresh cache
+    when online; fall back to cache offline, with index.html as navigation fallback). Cross-origin
+    requests pass through untouched. Offline still works.
+  - `app.js` service-worker registration now calls `reg.update()` on load and reloads once on
+    `controllerchange`, so a new version takes over and applies without manual cache clearing.
+  - Version bumped to **1.0.2** (APP_VERSION + sw cache `mathfun-v1.0.2`); README changelog +
+    userguide footer updated.
+- **Diagnostic test suggested to Isaac:** open the live URL in an incognito window (bypasses
+  cache/SW) to confirm the code is correct vs a caching issue.
+- **To ship:** commit + push via GitHub Desktop. First load after deploy fetches the new SW;
+  because the strategy is now network-first, subsequent updates apply on reload. On the installed
+  app, close/reopen once so the 1.0.2 worker activates.
+
+## Theme toggle - real root cause & rework - v1.0.3 - 02 Sep 2026
+Isaac confirmed the toggle failed **in incognito too** - which ruled out caching (my v1.0.2
+theory) and proved it was a code/UX bug. Diagnosed properly this time.
+- **Root cause:** the button cycled **auto -> light -> dark**, and the default was `auto`.
+  On a light-OS device (Isaac's PC/incognito, and phone in light mode) "auto" and "light" render
+  **identically**, so the first tap produced no visible change and read as "broken". The CSS/JS
+  were technically correct; the three-way cycle with an OS-dependent "auto" was the problem.
+- **Fix (app.js):** reworked to a **two-way Light <-> Dark toggle**. `resolveTheme()` maps any
+  legacy/auto/empty value to the current OS preference; `applyTheme` now *always* sets an explicit
+  `data-theme` (never relies on the OS after first use); `cycleTheme` flips light<->dark; the button
+  shows the theme it will switch TO. First run still follows the device via `matchMedia`.
+- **Kept** the v1.0.2 network-first SW + auto-reload (still the right call for future updates).
+- Version bumped to **1.0.3** (app.js + sw cache). README changelog, userguide footer + themes
+  copy updated (no more "Auto/Light/Dark").
+- **Lesson:** "works on Live Server, not deployed" was a red herring driven by light-OS vs dark-OS
+  rendering of identical auto/light states, not the environment. The incognito test was the tell.
+- **To ship:** commit + push via GitHub Desktop; new network-first SW means it applies on reload.
+
+## Icon refresh + wording - v1.0.4 - 02 Sep 2026
+Two pre-push tweaks requested by Isaac:
+- **App icon** (`icons/icon.svg`) redesigned to be brighter/funnier: multi-stop gradient
+  (purple->pink->amber), a chunky white multiplication cross with a **smiley face** in the centre,
+  and confetti dots. Reads as a fun character rather than a plain "X".
+- **Setup heading** "Create your player" -> "Create your profile" (ui.js `renderSetup`).
+- Version bumped to **1.0.4** (app.js + sw cache) so the new icon refreshes on installed devices
+  (icons cache aggressively). README changelog + userguide footer updated.
+- Header text brand mark left as the small "x" - separate from the app icon; can revisit if wanted.
+- **Not yet pushed:** local is v1.0.4; the live GitHub Pages site is still the original v1.0.0
+  bundle. Everything since (theme fix v1.0.1-1.0.3, network-first SW, icon/wording v1.0.4) ships
+  on the next GitHub Desktop commit + push.

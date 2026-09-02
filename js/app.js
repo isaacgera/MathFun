@@ -7,7 +7,7 @@ import * as rewards from './rewards.js';
 import * as sound from './sound.js';
 import * as ui from './ui.js';
 
-export const APP_VERSION = '1.0.1';
+export const APP_VERSION = '1.0.4';
 
 const screens = {
   who: document.getElementById('screen-who'),
@@ -25,14 +25,23 @@ let timerId = null;
 let timerStart = 0;
 
 // ---------- Theme ----------
+// Simple two-way Light <-> Dark toggle: every tap visibly flips the palette (no
+// identical-looking "auto" middle state). Always applies an explicit data-theme so the
+// result never depends on the device's OS setting.
+function osPrefersDark() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function resolveTheme(theme) {
+  // Any legacy/auto/empty value resolves to the current OS preference on first use.
+  if (theme === 'light' || theme === 'dark') return theme;
+  return osPrefersDark() ? 'dark' : 'light';
+}
 function applyTheme(theme) {
-  if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-theme', resolveTheme(theme));
 }
 function cycleTheme() {
-  const s = state.getState();
-  const order = ['auto', 'light', 'dark'];
-  const next = order[(order.indexOf(s.settings.theme) + 1) % order.length];
+  const current = resolveTheme(state.getState().settings.theme);
+  const next = current === 'dark' ? 'light' : 'dark';
   state.updateSettings({ theme: next });
   applyTheme(next);
   updateThemeButton(next);
@@ -40,9 +49,10 @@ function cycleTheme() {
 function updateThemeButton(theme) {
   const btn = document.getElementById('themeToggle');
   if (!btn) return;
-  const map = { auto: '\uD83C\uDF13 Auto', light: '\u2600\uFE0F Light', dark: '\uD83C\uDF19 Dark' };
-  btn.textContent = map[theme];
-  btn.setAttribute('aria-label', `Theme: ${theme}. Tap to change.`);
+  const resolved = resolveTheme(theme);
+  // Show what a tap will switch TO, so the action is clear.
+  btn.textContent = resolved === 'dark' ? '\u2600\uFE0F Light' : '\uD83C\uDF19 Dark';
+  btn.setAttribute('aria-label', `Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`);
 }
 
 // ---------- Profile chip (header) ----------
@@ -273,7 +283,17 @@ function init() {
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        // Check for updates on each load, and reload once a new worker takes control
+        // so fixes reach users without manual cache clearing.
+        reg.update?.();
+      }).catch(() => {});
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloaded) return;
+        reloaded = true;
+        window.location.reload();
+      });
     });
   }
 }

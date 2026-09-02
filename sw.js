@@ -1,7 +1,10 @@
-// sw.js - app-shell caching so MathFun loads and plays offline (SPEC R8).
-// The cache name carries the app version; bump VERSION on each release to bust old caches.
+// sw.js - offline app-shell caching (SPEC R8).
+// Strategy: NETWORK-FIRST when online (so updates are picked up immediately and the cache
+// is refreshed), falling back to the cache when offline. The cache name carries the app
+// version; bump VERSION on each release. skipWaiting + clients.claim make a new worker take
+// over promptly.
 
-const VERSION = '1.0.1';
+const VERSION = '1.0.4';
 const CACHE = `mathfun-v${VERSION}`;
 
 const ASSETS = [
@@ -35,11 +38,21 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Cache-first for our shell; network fallback for anything else.
+// Network-first for same-origin GETs: fetch fresh, update the cache, fall back to cache offline.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return; // let cross-origin requests pass through
+
   event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req).catch(() => cached))
+    fetch(req)
+      .then((res) => {
+        // Cache a fresh copy for offline use.
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))
   );
 });

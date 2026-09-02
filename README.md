@@ -76,6 +76,22 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.0.4 - 02 Sep 2026
+- Brighter, friendlier app icon (colourful gradient, smiley multiplication cross, confetti).
+- Renamed the setup heading "Create your player" -> "Create your profile".
+
+### v1.0.3 - 02 Sep 2026
+- Theme control reworked to a clear two-way **Light <-> Dark** toggle. The old three-way
+  Auto/Light/Dark cycle looked broken on a light-OS device because "Auto" and "Light" render
+  identically, so the first tap appeared to do nothing. Now every tap visibly flips the palette,
+  an explicit theme is always applied (never depends on the OS setting after first use), and the
+  button shows the theme it will switch to. First run still follows the device's OS preference.
+
+### v1.0.2 - 02 Sep 2026
+- Service worker switched to network-first (fresh code loads when online, cache used offline)
+  and the app now auto-reloads when a new version takes over. This fixes updates (incl. the
+  theme fix) getting stuck behind a stale cache on the hosted/installed PWA.
+
 ### v1.0.1 - 02 Sep 2026
 - Fixed the Light/Dark/Auto theme toggle on dark-OS devices (and the installed/hosted PWA):
   theme selection is now explicit and specificity-proof, and the OS-dark media query applies
