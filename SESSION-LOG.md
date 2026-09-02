@@ -192,3 +192,21 @@ GitHub Pages CSS now contains the full current build ([data-theme] light/dark th
 .toggles-row, table-tile, emboss styling) - so v1.0.1->1.0.6 are all deployed.
 - **Live & current:** https://isaacgera.github.io/MathFun/ (v1.0.6).
 - Session end. Everything built, documented and deployed.
+
+## Wrap-up & next-session direction - 02 Sep 2026
+Closed out the session with docs fully aligned to shipped v1.0.6:
+- Ideas.md version tag corrected to Built (MathFun v1.0.6).
+- SPEC-requirements.md + SPEC-design.md updated to match the app as shipped (multi-profile,
+  age 5-15, Timer, Sound+Music, two-way app-level theme, network-first SW, SVG icon, "Mode" screen,
+  resolved decisions, added R0 profiles requirement).
+- Note: these SPEC/Ideas doc edits are local only - not yet pushed to GitHub (docs don't affect the
+  running app; push at leisure via GitHub Desktop to keep the repo's docs current).
+
+**Next session:** extend MathFun beyond multiplication to add **Addition, Subtraction and Division**
+(the reason the name was kept broad). Likely a v1.1/v2:
+- Add an operation picker (x / + / - / div) alongside difficulty.
+- Generalise question + near-miss distractor generation per operation (e.g. division as inverse of
+  the tables; sensible ranges for +/- by age/difficulty).
+- Extend the mastery model + grid to be per-operation (not just AxB facts).
+- Update Mode screen, help/userguide, versioning; keep aligned with the separate "Maths Quiz Builder"
+  backlog idea to avoid overlap.

@@ -63,7 +63,13 @@
 - [x] Update SESSION-LOG.md; tick SPEC-tasks; set Ideas.md -> Built (MathFun v1.0.0)
 - [x] Deploy to GitHub Pages + verify hosted PWA over HTTPS -> https://isaacgera.github.io/MathFun/
 
+## Planned next - v1.1: more operations
+- [ ] Add an operation picker (x / + / - / div) alongside difficulty
+- [ ] Generalise question + near-miss distractor generation per operation
+      (division as inverse of the tables; sensible +/- ranges by age/difficulty)
+- [ ] Extend the mastery model + grid to be per-operation (not just AxB facts)
+- [ ] Update Mode screen, help/userguide, versioning; keep aligned with the "Maths Quiz Builder" idea
+
 ## Nice-to-have / later
 - [ ] Store-quality raster icons (192 / 512 / maskable PNGs) - currently a single SVG
-- [ ] Other operations (+, -, x) - keep aligned with the "Maths Quiz Builder" backlog idea
 - [ ] Optional export/import of a child's progress
