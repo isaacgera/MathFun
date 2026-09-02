@@ -7,7 +7,7 @@ import * as rewards from './rewards.js';
 import * as sound from './sound.js';
 import * as ui from './ui.js';
 
-export const APP_VERSION = '1.0.4';
+export const APP_VERSION = '1.0.6';
 
 const screens = {
   who: document.getElementById('screen-who'),
@@ -40,9 +40,9 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', resolveTheme(theme));
 }
 function cycleTheme() {
-  const current = resolveTheme(state.getState().settings.theme);
+  const current = resolveTheme(state.getTheme());
   const next = current === 'dark' ? 'light' : 'dark';
-  state.updateSettings({ theme: next });
+  state.setTheme(next);
   applyTheme(next);
   updateThemeButton(next);
 }
@@ -51,8 +51,10 @@ function updateThemeButton(theme) {
   if (!btn) return;
   const resolved = resolveTheme(theme);
   // Show what a tap will switch TO, so the action is clear.
+  const switchTo = resolved === 'dark' ? 'light' : 'dark';
   btn.textContent = resolved === 'dark' ? '\u2600\uFE0F Light' : '\uD83C\uDF19 Dark';
-  btn.setAttribute('aria-label', `Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`);
+  btn.setAttribute('aria-label', `Switch to ${switchTo} theme`);
+  btn.setAttribute('title', `Switch to ${switchTo} theme`);
 }
 
 // ---------- Profile chip (header) ----------
@@ -125,8 +127,8 @@ function showEditProfile() {
 
 function afterProfileChosen() {
   const s = state.getState();
-  applyTheme(s.settings.theme);
-  updateThemeButton(s.settings.theme);
+  applyTheme(state.getTheme());
+  updateThemeButton(state.getTheme());
   // Sync background music with this profile's setting.
   if (s.settings.music) sound.startMusic(); else sound.stopMusic();
   refreshChip();
@@ -269,13 +271,21 @@ document.addEventListener('keydown', (e) => {
 // ---------- Bridge for markup-created buttons ----------
 window.MathFun = { answer: answerQuestion, goHome };
 
+// Robust theme toggle via event delegation - fires even if the direct binding is missed,
+// and survives any header re-render. Guarded so it can't double-bind.
+document.addEventListener('click', (e) => {
+  const el = e.target instanceof Element ? e.target.closest('#themeToggle') : null;
+  if (el) { e.preventDefault(); cycleTheme(); }
+});
+
 // ---------- Init ----------
 function init() {
-  const s = state.getState();
-  applyTheme(s.settings.theme);
-  updateThemeButton(s.settings.theme);
-  document.getElementById('themeToggle')?.addEventListener('click', cycleTheme);
+  applyTheme(state.getTheme());
+  updateThemeButton(state.getTheme());
+  // Theme toggle is handled by the delegated document click listener below (single binding).
   document.getElementById('helpBack')?.addEventListener('click', goHome);
+  // Logo acts as a reload/refresh of the current page.
+  document.getElementById('brandHome')?.addEventListener('click', () => location.reload());
   const vEl = document.getElementById('appVersion');
   if (vEl) vEl.textContent = APP_VERSION;
 

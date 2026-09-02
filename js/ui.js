@@ -56,7 +56,7 @@ export function renderHome(container, state, handlers) {
   const tableChosen = s.difficulty === 'table' && s.table;
 
   container.innerHTML = `
-    <h2 tabindex="-1">Pick how to play</h2>
+    <h2 tabindex="-1">Mode</h2>
     <div class="mode-grid" role="group" aria-label="Difficulty">
       ${['easy', 'medium', 'hard'].map((d) => `
         <button class="mode-card ${s.difficulty === d ? 'selected' : ''}" data-diff="${d}"

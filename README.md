@@ -76,6 +76,17 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.0.6 - 02 Sep 2026
+- Renamed the home heading "Pick how to play" -> "Mode".
+- Theme toggle now has an aria-label and a tooltip (title) that state which theme a tap switches to.
+- The MathFun logo/name (top left) is now a clickable button that reloads the app.
+
+### v1.0.5 - 02 Sep 2026
+- Fixed the theme toggle not working on the profile-creation / who's-playing screens. Theme was
+  stored per-profile, so before a profile existed the toggle couldn't persist and appeared stuck.
+  Theme is now an app-level setting that works on every screen. Header logo also updated to the
+  new icon everywhere.
+
 ### v1.0.4 - 02 Sep 2026
 - Brighter, friendlier app icon (colourful gradient, smiley multiplication cross, confetti).
 - Renamed the setup heading "Create your player" -> "Create your profile".

@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Built (v1.0.4) - pending push (deployed live is still v1.0.0)
+- **Status:** Built (v1.0.6) - pending push (deployed live is still v1.0.0)
 - **Live:** https://isaacgera.github.io/MathFun/
 - **Description:** Playful times-tables game for kids 5-15 (multiplication 1x-20x; extendable to +/-/div later). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
@@ -152,3 +152,36 @@ Two pre-push tweaks requested by Isaac:
 - **Not yet pushed:** local is v1.0.4; the live GitHub Pages site is still the original v1.0.0
   bundle. Everything since (theme fix v1.0.1-1.0.3, network-first SW, icon/wording v1.0.4) ships
   on the next GitHub Desktop commit + push.
+
+## Theme toggle - ACTUAL root cause found & fixed - v1.0.5 - 02 Sep 2026
+Isaac's sharp observation cracked it: the toggle **works once a profile is created and playing,
+but not on the profile-creation / who's-playing screens**.
+- **Root cause:** theme was stored **per-profile** (`progress.settings.theme`). On the setup/who
+  screens there is **no active profile yet**, so `updateSettings()` early-returned (no save) and
+  `getState()` returned a fresh default each call, the toggle couldn't persist or compute a real
+  next value, so it appeared dead. Once a profile existed, the per-profile path worked - exactly
+  matching the symptom. (All my earlier CSS/cache/cycle theories were wrong; this screen-specific
+  clue was the key.)
+- **Fix:**
+  - state.js: theme is now **app-level** on the store root (`store.theme`), with `getTheme()` /
+    `setTheme()`. `defaultStore()` seeds `theme:'auto'`; `fillDefaults` migrates existing stores.
+  - app.js: `cycleTheme`, `applyTheme`, `init`, `afterProfileChosen` now use `getTheme/setTheme`
+    instead of the per-profile settings. Kept the two-way light<->dark toggle and the delegated
+    click binding.
+- **Icon on early screens:** the header brand mark now uses `./icons/icon.svg` (was a hardcoded
+  text "x"); the old look on setup/who was that stale hardcoded mark + cached paint. Now consistent
+  everywhere after a hard refresh.
+- Version bumped to **1.0.5** (app.js + sw cache); README changelog + userguide footer updated.
+- **Still pending push:** live site is v1.0.0; this + all prior fixes ship on the next
+  GitHub Desktop commit + push. Hard-refresh (Ctrl+Shift+R) after deploy.
+
+## UI tweaks - v1.0.6 - 02 Sep 2026
+Three small requests from Isaac:
+- Home heading "Pick how to play" -> **"Mode"** (ui.js renderHome).
+- Theme toggle now has **aria-label + title tooltip** stating the theme a tap switches to
+  (updateThemeButton sets both; static button in index.html seeded with title too).
+- **Logo is now clickable** - the top-left MathFun icon+name is a `<button id="brandHome">`
+  that calls `location.reload()` (acts as a refresh). Styled as a button reset with hover/active/
+  focus states; brand-mark uses the icon.svg.
+- Version bumped to **1.0.6** (app.js + sw cache); README changelog + userguide footer updated.
+- Still pending push (live = v1.0.0).

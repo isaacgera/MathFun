@@ -32,7 +32,9 @@ function newProfile({ name, avatar, age, gender }) {
 }
 
 function defaultStore() {
-  return { schema: SCHEMA, activeId: null, profiles: [] };
+  // theme is app-level (not per-profile) so it works on every screen, including
+  // before any profile exists (setup / who's-playing).
+  return { schema: SCHEMA, activeId: null, theme: 'auto', profiles: [] };
 }
 
 // ----- helpers -----
@@ -207,4 +209,16 @@ export function resetActiveProgress() {
   if (!p) return;
   p.progress = defaultProgress();
   save();
+}
+
+// ----- app-level theme (works with or without an active profile) -----
+export function getTheme() {
+  return load().theme || 'auto';
+}
+
+export function setTheme(theme) {
+  const s = load();
+  s.theme = theme;
+  save();
+  return theme;
 }
