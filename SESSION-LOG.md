@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Built (v1.0.6) - pending push (deployed live is still v1.0.0)
+- **Status:** Built & deployed (v1.0.6)
 - **Live:** https://isaacgera.github.io/MathFun/
 - **Description:** Playful times-tables game for kids 5-15 (multiplication 1x-20x; extendable to +/-/div later). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
@@ -185,3 +185,10 @@ Three small requests from Isaac:
   focus states; brand-mark uses the icon.svg.
 - Version bumped to **1.0.6** (app.js + sw cache); README changelog + userguide footer updated.
 - Still pending push (live = v1.0.0).
+
+## Pushed & live - v1.0.6 - 02 Sep 2026
+Isaac committed + pushed all pending changes via GitHub Desktop. Verified the live
+GitHub Pages CSS now contains the full current build ([data-theme] light/dark theme fix,
+.toggles-row, table-tile, emboss styling) - so v1.0.1->1.0.6 are all deployed.
+- **Live & current:** https://isaacgera.github.io/MathFun/ (v1.0.6).
+- Session end. Everything built, documented and deployed.

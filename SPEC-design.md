@@ -1,35 +1,35 @@
 ﻿# MathFun - Design
 
-- **Category:** Learning | **Tier:** Simple | **Status:** In Progress (v1)
+- **Category:** Learning | **Tier:** Simple | **Status:** Built & deployed (v1.0.6)
 - **Stack:** Vanilla HTML/CSS/JS, no build step. **Platform:** mobile-first installable PWA.
-- **Licence:** MIT (added at v1.0.0 port).
+- **Licence:** MIT. **Live:** https://isaacgera.github.io/MathFun/
 
-This design is intentionally concise (Simple tier). It guides the prototype build and
-becomes the source-of-truth design doc when the prototype is ported to v1.0.0.
+This design is intentionally concise (Simple tier). It reflects the app **as shipped** (built
+prototype-first in `prototypes/`, then ported to the app root as v1.0.0 and iterated to v1.0.6).
 
-## 1. Architecture & file layout
-No framework, no bundler. ES modules loaded from `index.html`. Built first in a
-prototype sandbox, then ported to the app root.
+## 1. Architecture & file layout (as shipped)
+No framework, no bundler. ES modules loaded from `index.html`. The shipping app lives at the
+`Learning/MathFun/` root; `prototypes/` is kept as the local sandbox (git-ignored, not published).
 
 ```
 Learning/MathFun/
-  SPEC-*.md, SESSION-LOG.md, userguide.html      (docs)
-  prototypes/                                     (build here first)
-    index.html            app shell + PROTOTYPE banner
-    styles.css            design tokens + all styling (light/dark)
-    js/
-      app.js              bootstrap, screen routing, wiring
-      state.js            in-memory state + localStorage load/save (namespaced)
-      questions.js        question + near-miss distractor generation
-      game.js             round lifecycle (10 Qs, scoring, timed mode)
-      rewards.js          stars, streaks, badges logic
-      mastery.js          per-fact mastery tracking + grid data
-      sound.js            WebAudio synthesized tones (no files)
-      ui.js               DOM render helpers for each screen
-    manifest.webmanifest  PWA manifest (proto name/scope)
-    sw.js                 service worker (cache app shell)
-    icons/                app icons (proto)
-  (on port to v1.0.0: the above moves to Learning/MathFun/ root, plus README.md, LICENSE)
+  index.html            app shell + screens
+  styles.css            design tokens + all styling (light/dark)
+  js/
+    app.js              bootstrap, screen routing, profile flow, theme, wiring
+    state.js            profile store + app-level theme; only module touching localStorage
+    questions.js        fact pools + near-miss distractor generation; age->difficulty
+    game.js             round lifecycle (10 Qs, scoring, Timer)
+    rewards.js          stars, streaks, badges logic
+    mastery.js          per-fact mastery tracking + grid data (1x-20x)
+    sound.js            WebAudio synthesized effects + background music (no files)
+    ui.js               DOM render helpers for each screen
+    avatars.js          the avatar set (10 characters)
+  manifest.webmanifest  PWA manifest
+  sw.js                 service worker (network-first; versioned cache)
+  icons/icon.svg        app icon
+  README.md, LICENSE, userguide.html, SPEC-*.md, SESSION-LOG.md
+  prototypes/           local sandbox (git-ignored)
 ```
 
 Module dependency (one direction, no cycles):
@@ -37,35 +37,47 @@ Module dependency (one direction, no cycles):
 `state.js` is the only module that touches `localStorage`.
 
 ## 2. Screens (single-page, screen-swap, no router lib)
-1. **Home** - title, difficulty picker (Easy/Medium/Hard), "Pick a table" selector (1-20),
-   Beat-the-clock toggle, sound toggle, theme toggle, buttons: Play, Mastery grid, Rewards, Help.
-2. **Play** - progress ("Q4 of 10" + bar), the problem (e.g. "7 x 8 = ?"), 4 answer tiles,
-   feedback area (aria-live), optional per-question timer bar.
-3. **Results** - score (e.g. 8/10), stars earned, new best / new badge callouts, Play again / Home.
-4. **Mastery grid** - grid of facts/tables coloured + labelled by state (solid / okay / needs work).
+0. **Who's playing** - profile picker + "Add player". **Setup** - create-profile wizard
+   (Name -> Boy/Girl -> Age -> Avatar) / edit summary + all-fields edit.
+1. **Home ("Mode")** - difficulty cards (Easy/Medium/Hard) + "Pick a table" (opens a 1-20 dialog),
+   Play button, then Timer/Sound/Music On-Off switches in one row. Progress/Rewards/Help live in
+   the header profile menu (not on Home).
+2. **Play** - progress ("Q4 of 10" + bar), the problem, 4 answer tiles, aria-live feedback,
+   optional per-question timer bar.
+3. **Results** - score, stars, new best / new badge callouts, Play again / Home.
+4. **Mastery grid** - facts 1x-20x coloured + labelled by state (solid / okay / needs work).
 5. **Rewards** - badges earned (and locked), streak + personal bests.
-6. **Help/About** - short how-to, version, MIT note (links to userguide).
+6. **Help** - short how-to, version, MIT note.
 
-Screens are sections toggled via a `data-screen` attribute / `.is-active` class; only one visible.
+Persistent header: clickable **logo** (reloads), **theme** toggle, **profile chip** + menu.
+Screens are sections toggled via an `.is-active` class; only one visible.
 
-## 3. Data model (localStorage, namespaced)
-- **Prototype prefix:** `mathfunproto_`  | **v1 prefix:** `mathfun_`
-- Single JSON blob per key `..._state` plus a `..._schema` version int.
+## 3. Data model (localStorage) - as shipped
+- **Storage key:** `mathfun_store` (prototype used `mathfunproto_`). Single JSON store blob.
+- **Multi-profile** with an app-level theme (theme lives at the store root so it works before any
+  profile exists). `schema: 2` (v1 flat blob migrates to a default profile on load).
 
 ```jsonc
 {
-  "schema": 1,
-  "settings": { "difficulty": "medium", "table": null, "timed": false,
-                "sound": true, "theme": "auto" },      // table set only in pick-a-table mode
-  "bests":    { "easy": 0, "medium": 0, "hard": 0, "longestStreak": 0 },
-  "streakDays": { "count": 0, "lastPlayedISO": null },
-  "badges":   ["first_perfect", "mastered_7s"],         // ids of earned badges
-  "mastery":  { "7x8": { "attempts": [1,1,0,1,1] } }     // per fact: last <=5 results (1=correct)
+  "schema": 2,
+  "theme": "light",              // app-level: 'auto' | 'light' | 'dark' (auto = follow OS on first run)
+  "activeId": "p_ab12",
+  "profiles": [{
+    "id": "p_ab12", "name": "Aarav", "avatar": "\uD83E\uDD8A", "age": 8, "gender": "boy",
+    "createdISO": "...",
+    "progress": {
+      "settings": { "difficulty": null, "table": null, "timed": false, "sound": true, "music": false },
+      "bests":    { "easy": 0, "medium": 0, "hard": 0, "table": 0, "longestStreak": 0 },
+      "streakDays": { "count": 0, "lastPlayedISO": null },
+      "badges":   ["first_perfect"],
+      "mastery":  { "7x8": { "attempts": [1,1,0,1,1] } }   // per fact: last <=5 results (1=correct)
+    }
+  }]
 }
 ```
-- `mastery` keyed by canonical fact id `"AxB"` with A<=B (so 7x8 and 8x7 share one cell).
-- Load path: parse -> validate shape -> fill defaults for anything missing (R7.3).
-- Migration hook: if stored `schema` < current, run migration map then save (R7.4).
+- `mastery` keyed by canonical fact id `"AxB"` with A<=B (7x8 and 8x7 share one cell).
+- `difficulty`/`table` are reset to null on load and on player switch (per-session choice).
+- Load path: parse -> fill defaults -> migrate v1 flat blob if present (R7.3, R7.4). No data loss.
 
 ## 4. Question & distractor generation (questions.js)
 - **Fact pool** by mode: Easy = tables 1-5, Medium = 1-10, Hard = 1-20, Pick-a-table = chosen row.
@@ -94,25 +106,35 @@ Screens are sections toggled via a `data-screen` attribute / `.is-active` class;
   **Okay** = some attempts but below mastered. **Needs work** = low accuracy or few attempts.
 - Grid cell shows state via colour + icon + label (never colour alone, R9.3). Tables mode aggregates facts per row.
 
-## 8. Sound (sound.js)
-- WebAudio API synthesized tones only (no asset files) - keeps the app tiny and fully offline (R3.1, confirmed).
-- Short pleasant blip for correct, soft low tone for wrong, little arpeggio for reward. All gated by the sound toggle; feedback also always visual (R3.4).
+## 8. Sound & music (sound.js)
+- WebAudio API synthesized only (no asset files) - keeps the app tiny and fully offline.
+- **Sound effects:** blip for correct, low tone for wrong, arpeggio for reward (gated by Sound toggle).
+- **Background music:** a gentle looping pentatonic arpeggio at low volume (gated by Music toggle),
+  separate from effects. All feedback is always visual too (R3.4).
 
 ## 9. PWA (manifest + sw)
-- `manifest.webmanifest`: name "MathFun", short_name "MathFun", `display: standalone`, portrait-primary, theme/background from tokens, icon set (192/512 + maskable).
-- `sw.js`: cache app shell + assets on install (cache-first for shell); **cache name carries version** so a version bump busts old caches (R8.4). Register only over http(s) (R8.5).
-- Prototype uses a `-proto` cache name and proto manifest name so it never clashes with v1.
+- `manifest.webmanifest`: name "MathFun - Times Tables", short_name "MathFun", `display: standalone`,
+  portrait-primary, theme/background from tokens. Icon is a single **SVG** (`icons/icon.svg`); raster
+  PNGs (192/512/maskable) are a noted nice-to-have.
+- `sw.js`: **network-first** for same-origin GETs (fresh code online, refresh cache; fall back to
+  cache offline) so updates aren't stuck behind a stale cache. Cache name carries the version (R8.4);
+  registered only over http(s) (R8.5). `app.js` reloads once on `controllerchange` so new versions apply.
 
 ## 10. Accessibility & theming
-- Design tokens in `:root` (colours, spacing, radius, shadow, font sizes); dark theme via `prefers-color-scheme` + `[data-theme]` override persisted in settings (R10.1-2).
+- Design tokens in `:root`; explicit `[data-theme="light"]` and `[data-theme="dark"]` blocks, with the
+  `prefers-color-scheme: dark` media query scoped to auto only (`:root:not([data-theme])`). Theme is a
+  two-way Light<->Dark toggle stored app-level (works on every screen); first run follows the OS (R10.1-2).
+  Interactive tiles/buttons use an emboss/shrink style with hover behind `@media (hover:hover)` so it
+  never "sticks" on touch; the selected state is a flat highlight (not a raised lift).
 - Tap targets >=44-48px, visible focus rings, keyboard support (1-4 keys / arrows+Enter to answer), `aria-live="polite"` feedback region, labels on icon buttons, contrast checked both themes (R9).
 - Honour `prefers-reduced-motion` - disable/tone-down celebratory animation (R9.4).
 - Transitions ~120-200ms ease-out; playful rounded, friendly type (R10.3-4).
 
 ## 11. Versioning
-- Single `APP_VERSION` constant in `app.js`; prototype = `"1.0.0-proto"`, port to `"1.0.0"`.
-- Cache name derives from APP_VERSION. Changelog kept in README at port time.
+- Single `APP_VERSION` constant in `app.js`; `sw.js` VERSION mirrors it and the cache name derives
+  from it. Shipped v1.0.0, then patched to **v1.0.6** (theme fix, network-first SW, icon, UI tweaks).
+  Changelog in README.
 
 ## Deferred to later versions
-Other operations (+ - x div), number-pad/typed input, multiple child profiles, export/import,
-cloud sync, leaderboards. (Keep multi-operation growth aligned with the "Maths Quiz Builder" backlog idea.)
+Other operations (+ - x div), number-pad/typed input, progress export/import, cloud sync,
+leaderboards, raster PNG icons. (Keep multi-operation growth aligned with the "Maths Quiz Builder" idea.)
