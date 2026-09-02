@@ -35,8 +35,23 @@
   --m-new: #cbd5e1;
 }
 
+/* Dark palette, shared by the OS-auto media query and the explicit dark choice. */
+:root[data-theme="dark"] {
+  --bg: #14162b; --surface: #1e2140; --surface-2: #262a4d;
+  --text: #f0f1fb; --text-soft: #a6abcf; --border: #333863;
+  --shadow: 0 6px 20px rgba(0,0,0,.4); --shadow-sm: 0 2px 8px rgba(0,0,0,.35);
+  --good-bg: #143a24; --bad-bg: #401b1b; --m-new: #475069;
+}
+/* Explicit light choice - restate light tokens so "Light" always wins on a dark-OS device. */
+:root[data-theme="light"] {
+  --bg: #f5f3ff; --surface: #ffffff; --surface-2: #f1eefe;
+  --text: #1f2340; --text-soft: #5b5f7a; --border: #e5e1f7;
+  --shadow: 0 6px 20px rgba(76,60,180,.12); --shadow-sm: 0 2px 8px rgba(76,60,180,.10);
+  --good-bg: #dcfce7; --bad-bg: #fee2e2; --m-new: #cbd5e1;
+}
+/* Auto mode only (no manual data-theme set): follow the OS preference. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme]) {
     --bg: #14162b;
     --surface: #1e2140;
     --surface-2: #262a4d;
@@ -49,12 +64,6 @@
     --bad-bg: #401b1b;
     --m-new: #475069;
   }
-}
-:root[data-theme="dark"] {
-  --bg: #14162b; --surface: #1e2140; --surface-2: #262a4d;
-  --text: #f0f1fb; --text-soft: #a6abcf; --border: #333863;
-  --shadow: 0 6px 20px rgba(0,0,0,.4); --shadow-sm: 0 2px 8px rgba(0,0,0,.35);
-  --good-bg: #143a24; --bad-bg: #401b1b; --m-new: #475069;
 }
 
 * { box-sizing: border-box; }

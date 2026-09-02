@@ -2,7 +2,8 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Built (v1.0.0) - not yet deployed
+- **Status:** Built & deployed (v1.0.1)
+- **Live:** https://isaacgera.github.io/MathFun/
 - **Description:** Playful times-tables game for kids 5-15 (multiplication 1x-20x; extendable to +/-/div later). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
 
@@ -69,3 +70,32 @@ production edits.
   Full install/offline needs HTTPS (Port Forwarding or the deployed URL).
 - **Icons:** currently a single SVG; generate 192/512/maskable PNGs for best install icon quality.
 - Future: other operations (+/-/x) - align with the "Maths Quiz Builder" backlog idea.
+
+## Deployed to GitHub Pages - 02 Sep 2026
+Isaac published the app to GitHub via GitHub Desktop and enabled Pages.
+- **Live URL:** https://isaacgera.github.io/MathFun/
+- Repo excludes `prototypes/` (added to `.gitignore`) so only the shipping app + docs are published.
+- Verified the site serves over HTTPS: index.html loads with the real app content; js/app.js
+  serves as application/javascript and manifest.webmanifest as application/manifest+json (both 200,
+  correct MIME types) - so the PWA installs and runs offline. Version footer fills in via JS at runtime.
+- README updated with a "Live demo" link; SPEC-tasks Deploy item ticked.
+- **v1.0.0 is complete and live.** Remaining nice-to-haves only: store-quality PNG icons; future
+  operations (+/-/x) aligned with the "Maths Quiz Builder" backlog idea; optional progress export/import.
+
+## Bug fix: theme toggle on dark-OS devices - v1.0.1 - 02 Sep 2026
+Isaac reported the Light/Dark/Auto switch didn't work on the GitHub Pages site / installed
+mobile app, though it was fine on Live Server.
+- **Root cause:** the light path had no explicit `[data-theme="light"]` token block, and the
+  OS-dark media query used `:root:not([data-theme="light"])` (specificity 0,2,0) which could
+  out-rank/interfere with the manual choice on a dark-OS device. On a light-OS PC (Live Server)
+  the media query never fired, so the bug was invisible there - hence "works locally, not deployed".
+- **Fix (styles.css):** made theme selection explicit and specificity-proof - added a full
+  `[data-theme="light"]` block, kept `[data-theme="dark"]`, and scoped the `prefers-color-scheme: dark`
+  media query to Auto only via `:root:not([data-theme])`. app.js theme logic already matched
+  (auto = remove attribute; light/dark = set it).
+- **Release:** bumped `APP_VERSION` and sw.js cache to **1.0.1** so the fix reaches installed
+  PWA users (old cache is purged on activate). Updated README changelog and userguide footer.
+- Verified deployed styles.css matched local before the fix (ruled out a stale-deploy mismatch);
+  all changed files pass diagnostics.
+- **To ship:** commit + push via GitHub Desktop; installed users get it on next launch once the
+  new service worker activates (may take one reload).

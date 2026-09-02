@@ -4,6 +4,8 @@ A playful, local-first **times-tables game** for kids aged 5-15. Practise multip
 from **1x1 to 20x20** by tapping one of four answers, and earn stars, streaks and badges
 along the way. Built as an installable, offline-capable PWA.
 
+**Live demo:** https://isaacgera.github.io/MathFun/
+
 > v1 covers multiplication only. The name is kept broad so addition, subtraction and
 > division can be added later.
 
@@ -74,6 +76,11 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.0.1 - 02 Sep 2026
+- Fixed the Light/Dark/Auto theme toggle on dark-OS devices (and the installed/hosted PWA):
+  theme selection is now explicit and specificity-proof, and the OS-dark media query applies
+  in Auto mode only. Bumped the service-worker cache so the fix reaches installed users.
+
 ### v1.0.0 - 02 Sep 2026
 - First release. Multiplication times tables 1x-20x.
 - Multi-profile (name, boy/girl, age, avatar) with per-profile progress.

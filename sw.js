@@ -1,7 +1,7 @@
 // sw.js - app-shell caching so MathFun loads and plays offline (SPEC R8).
 // The cache name carries the app version; bump VERSION on each release to bust old caches.
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const CACHE = `mathfun-v${VERSION}`;
 
 const ASSETS = [

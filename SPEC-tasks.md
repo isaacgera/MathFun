@@ -1,7 +1,8 @@
 ﻿# MathFun - Tasks
 
-- **Tier:** Simple | **Status:** Built (v1.0.0) | **Workflow:** prototype-first, ported to v1.0.0.
-- Shipping app at `Learning/MathFun/` root; the sandbox it was built in is kept at `Learning/MathFun/prototypes/`.
+- **Tier:** Simple | **Status:** Built & deployed (v1.0.0) | **Workflow:** prototype-first, ported to v1.0.0.
+- **Live:** https://isaacgera.github.io/MathFun/
+- Shipping app at `Learning/MathFun/` root; the sandbox it was built in is kept at `Learning/MathFun/prototypes/` (git-ignored, not published).
 
 ## Phase 0 - Kickoff (done)
 - [x] Rename idea + folder to MathFun; retitle docs
@@ -60,7 +61,7 @@
 - [x] Add LICENSE (MIT) + README (with changelog)
 - [x] Fill userguide.html (real content, app style) + in-app Help
 - [x] Update SESSION-LOG.md; tick SPEC-tasks; set Ideas.md -> Built (MathFun v1.0.0)
-- [ ] Deploy to static host (GitHub Pages / Netlify) + verify hosted PWA  *(Isaac)*
+- [x] Deploy to GitHub Pages + verify hosted PWA over HTTPS -> https://isaacgera.github.io/MathFun/
 
 ## Nice-to-have / later
 - [ ] Store-quality raster icons (192 / 512 / maskable PNGs) - currently a single SVG
