@@ -1,0 +1,19 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*~
+
+# Editor folders
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Node (not used, but guard against accidental installs)
+node_modules/
+
+# Local prototype sandbox - never published
+prototypes/
