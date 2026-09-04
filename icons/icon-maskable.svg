@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="MathFun">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c6cff"/>
+      <stop offset="0.55" stop-color="#ff7eb3"/>
+      <stop offset="1" stop-color="#ffb703"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Full-bleed background: fills the whole 512x512 so any mask (circle/squircle)
+       still shows the brand gradient with no transparent corners. -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- Foreground scaled into the ~80% maskable safe zone (centred, ~0.62x of the
+       original layout) so an adaptive-icon mask never crops the cross or smiley. -->
+  <g transform="translate(256 256) scale(0.62) translate(-256 -250)">
+    <!-- playful confetti dots (kept well inside the safe zone) -->
+    <circle cx="120" cy="140" r="18" fill="#ffffff" opacity="0.85"/>
+    <circle cx="400" cy="150" r="13" fill="#39d98a"/>
+    <circle cx="140" cy="380" r="15" fill="#ffd166"/>
+    <circle cx="392" cy="372" r="20" fill="#ffffff" opacity="0.8"/>
+
+    <!-- big friendly multiplication cross -->
+    <g transform="rotate(45 256 250)">
+      <rect x="212" y="112" width="88" height="276" rx="44" fill="#ffffff"/>
+      <rect x="118" y="206" width="276" height="88" rx="44" fill="#ffffff"/>
+    </g>
+
+    <!-- smiley face -->
+    <circle cx="224" cy="238" r="15" fill="#3b2f7a"/>
+    <circle cx="288" cy="238" r="15" fill="#3b2f7a"/>
+    <path d="M212 286 q44 46 88 0" stroke="#3b2f7a" stroke-width="16" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>

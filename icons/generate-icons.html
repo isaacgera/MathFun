@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathFun - PNG icon generator</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 0; padding: 24px; background: #f5f3ff; color: #1f1a3d; }
+    h1 { font-size: 1.25rem; margin: 0 0 4px; }
+    p { margin: 4px 0 16px; color: #4a4370; max-width: 60ch; line-height: 1.5; }
+    .row { display: flex; flex-wrap: wrap; gap: 20px; }
+    .card { background: #fff; border: 1px solid #e4e0f5; border-radius: 16px; padding: 16px; text-align: center; box-shadow: 0 4px 14px rgba(80,60,160,.08); }
+    .card canvas { image-rendering: auto; border-radius: 12px; background: #fff; max-width: 160px; height: auto; }
+    .card h2 { font-size: .95rem; margin: 10px 0 8px; }
+    .card small { color: #6b6490; display: block; margin-bottom: 10px; }
+    button { font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 10px; padding: 8px 14px; background: #6d5efc; color: #fff; transition: transform .15s ease, filter .15s ease; }
+    button:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    #all { margin: 4px 0 20px; background: #39a06b; }
+    .note { margin-top: 20px; font-size: .85rem; color: #6b6490; }
+  </style>
+</head>
+<body>
+  <h1>MathFun PNG icon generator</h1>
+  <p>One-time helper (not shipped with the app). It renders the brand SVGs to the PNGs the
+     manifest needs. Click <strong>Download all</strong>, then move the four files into this
+     <code>icons/</code> folder. Delete this file afterwards if you like.</p>
+
+  <button id="all" type="button">Download all four</button>
+
+  <div class="row" id="cards"></div>
+
+  <p class="note">Rendered locally in your browser via canvas &mdash; nothing is uploaded.</p>
+
+  <script>
+    // Each target: source SVG, output size, filename, and whether to force an opaque
+    // background (apple-touch-icon must not be transparent).
+    const TARGETS = [
+      { svg: 'icon.svg',          size: 192, file: 'icon-192.png',          opaque: false },
+      { svg: 'icon.svg',          size: 512, file: 'icon-512.png',          opaque: false },
+      { svg: 'icon-maskable.svg', size: 512, file: 'icon-maskable-512.png', opaque: false },
+      { svg: 'icon.svg',          size: 180, file: 'apple-touch-icon.png',  opaque: true  },
+    ];
+    const BG = '#f5f3ff'; // matches manifest background_color, used for opaque output
+
+    function loadSvg(path) {
+      return fetch(path)
+        .then((r) => { if (!r.ok) throw new Error('Cannot load ' + path); return r.text(); })
+        .then((text) => new Promise((resolve, reject) => {
+          const blob = new Blob([text], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => { resolve(img); URL.revokeObjectURL(url); };
+          img.onerror = () => { reject(new Error('Decode failed ' + path)); URL.revokeObjectURL(url); };
+          img.src = url;
+        }));
+    }
+
+    function render(canvas, img, size, opaque) {
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (opaque) { ctx.fillStyle = BG; ctx.fillRect(0, 0, size, size); }
+      ctx.drawImage(img, 0, 0, size, size);
+    }
+
+    function download(canvas, file) {
+      canvas.toBlob((blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = file;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }, 'image/png');
+    }
+
+    const built = [];
+    const cards = document.getElementById('cards');
+
+    Promise.all(TARGETS.map((t) => loadSvg(t.svg).then((img) => ({ t, img }))))
+      .then((items) => {
+        items.forEach(({ t, img }) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          const canvas = document.createElement('canvas');
+          render(canvas, img, t.size, t.opaque);
+          const h2 = document.createElement('h2');
+          h2.textContent = t.file;
+          const small = document.createElement('small');
+          small.textContent = t.size + '\u00d7' + t.size + (t.opaque ? ' (opaque)' : '');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = 'Download';
+          btn.addEventListener('click', () => download(canvas, t.file));
+          card.append(canvas, h2, small, btn);
+          cards.appendChild(card);
+          built.push({ canvas, file: t.file });
+        });
+      })
+      .catch((err) => {
+        document.body.insertAdjacentHTML('beforeend',
+          '<p style="color:#c0392b">' + err.message +
+          ' &mdash; open this page over http (Live Server), not file://.</p>');
+      });
+
+    document.getElementById('all').addEventListener('click', () => {
+      built.forEach((b, i) => setTimeout(() => download(b.canvas, b.file), i * 350));
+    });
+  </script>
+</body>
+</html>

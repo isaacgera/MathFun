@@ -7,7 +7,7 @@ import * as rewards from './rewards.js';
 import * as sound from './sound.js';
 import * as ui from './ui.js';
 
-export const APP_VERSION = '1.0.6';
+export const APP_VERSION = '1.0.7';
 
 const screens = {
   who: document.getElementById('screen-who'),

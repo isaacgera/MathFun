@@ -55,7 +55,7 @@ MathFun/
   styles.css            design tokens + all styling (light/dark)
   manifest.webmanifest  PWA manifest
   sw.js                 service worker (offline cache; bump VERSION per release)
-  icons/icon.svg        app icon
+  icons/                app icons: icon.svg + PNGs (192/512, maskable-512, apple-touch)
   js/
     app.js              bootstrap, routing, profile flow, wiring
     state.js            localStorage (the only module that touches it)
@@ -76,6 +76,13 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.0.7 - 04 Sep 2026
+- PWA install polish: added raster PNG icons (192, 512), a dedicated **maskable** 512 icon
+  (artwork kept in the adaptive-icon safe zone so Android launchers don't crop it), and a
+  180x180 opaque **apple-touch-icon** for iOS home screens. The manifest now declares PNGs
+  (with the SVG kept as an extra), and the service worker precaches them for offline installs.
+  Closes the icon gaps flagged by the PWA readiness check.
+
 ### v1.0.6 - 02 Sep 2026
 - Renamed the home heading "Pick how to play" -> "Mode".
 - Theme toggle now has an aria-label and a tooltip (title) that state which theme a tap switches to.

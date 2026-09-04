@@ -4,7 +4,7 @@
 // version; bump VERSION on each release. skipWaiting + clients.claim make a new worker take
 // over promptly.
 
-const VERSION = '1.0.6';
+const VERSION = '1.0.7';
 const CACHE = `mathfun-v${VERSION}`;
 
 const ASSETS = [
@@ -13,6 +13,10 @@ const ASSETS = [
   './styles.css',
   './manifest.webmanifest',
   './icons/icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png',
+  './icons/apple-touch-icon.png',
   './js/app.js',
   './js/state.js',
   './js/questions.js',
@@ -25,8 +29,13 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  // Precache the shell. addAll() is all-or-nothing (one missing file fails the whole
+  // install), so cache each asset individually and don't let a single miss break offline
+  // support for the rest of the app.
   event.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then((c) => Promise.all(ASSETS.map((url) => c.add(url).catch(() => {}))))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -48,9 +57,12 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(req)
       .then((res) => {
-        // Cache a fresh copy for offline use.
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        // Only cache complete, cacheable responses. Partial (206) or opaque/error
+        // responses throw on cache.put(); skip them so nothing is logged to the console.
+        if (res && res.status === 200 && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        }
         return res;
       })
       .catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))

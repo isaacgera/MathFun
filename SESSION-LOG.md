@@ -210,3 +210,74 @@ Closed out the session with docs fully aligned to shipped v1.0.6:
 - Extend the mastery model + grid to be per-operation (not just AxB facts).
 - Update Mode screen, help/userguide, versioning; keep aligned with the separate "Maths Quiz Builder"
   backlog idea to avoid overlap.
+
+## PWA icon gaps fixed - v1.0.7 - 04 Sep 2026
+Ran the **PWA Readiness Checker** on the live/shipped app. Verdict: a genuinely solid PWA -
+manifest complete and correctly scoped for the GitHub Pages subpath, service worker registered,
+versioned and network-first, no `file://` assumptions, offline works. **One real gap: icons.**
+The manifest shipped only a single `icon.svg` (`sizes:"any"`, `purpose:"any maskable"`) - no raster
+PNGs (Chrome/Android effectively require 192 + 512 PNG for install), no dedicated maskable asset
+(reusing one artwork risks Android cropping), and the apple-touch-icon pointed at SVG (iOS ignores
+SVG and falls back to a screenshot).
+
+**Fix (Bug Fix / Default mode - shipped-app polish, no scope creep):**
+- Added a **maskable-safe SVG** (`icons/icon-maskable.svg`): full-bleed gradient background with the
+  cross/smiley/confetti scaled to ~62% into the adaptive-icon safe zone so a circular/squircle mask
+  can't crop it.
+- Added a one-time **browser generator** (`icons/generate-icons.html`) that renders the two SVGs to
+  the four PNGs the manifest needs (canvas + download; nothing uploaded). Needed because this
+  Windows/Kiro shell has no working Node/ImageMagick/Inkscape/Python and can't run a browser.
+- **Manifest:** icons array now declares `icon-192.png` + `icon-512.png` (`purpose:"any"`),
+  `icon-maskable-512.png` (`purpose:"maskable"`), with `icon.svg` kept as an extra.
+- **index.html:** apple-touch-icon -> `apple-touch-icon.png` (180x180, opaque).
+- **sw.js:** precache the four new PNGs; **hardened install** to cache assets individually
+  (`c.add().catch()`) instead of all-or-nothing `addAll()`, so one missing/failed asset can no
+  longer break the whole offline precache. Cache bumped to `mathfun-v1.0.7`.
+- **Version:** `APP_VERSION` -> `1.0.7`; README changelog + file-layout note, userguide footer,
+  SPEC-design PWA section + layout, SPEC-tasks nice-to-have (ticked) all updated.
+
+**Action needed from Isaac before deploy (the one manual step):**
+1. Open `Learning/MathFun/icons/generate-icons.html` over **http** (Live Server), click
+   *Download all four*, and move `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`,
+   `apple-touch-icon.png` into the `icons/` folder. (Optional: delete `generate-icons.html`
+   afterwards - it's a helper, not part of the app.)
+2. Commit + push via GitHub Desktop (docs from earlier sessions are still pending push too).
+3. Verify: Chrome DevTools -> Application -> Manifest (icons resolve) + Lighthouse PWA/installability;
+   on Android confirm the launcher icon isn't cropped; on iOS Add to Home Screen shows the icon,
+   not a screenshot.
+
+**Verification note:** code edits all applied and are internally consistent (manifest/SW/HTML/version
+aligned); the SW no longer fails install if an icon is missing. Actual PNG rendering + hosted PWA
+install can't be exercised in this shell - it needs the browser generator step + a live/Live-Server
+check above. `Ideas.md` stays **Built**; bump its tag to `Built (MathFun v1.0.7)` once pushed.
+
+## v1.0.7 verified - Lighthouse all 100 - 04 Sep 2026
+Isaac generated the four PNGs via `icons/generate-icons.html` and saved them into `icons/`
+(`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`) - all now
+present and wired into the manifest/index.html/sw.js.
+
+**Verification (Live Server + deployed):**
+- Lighthouse on Live Server (http://127.0.0.1:5500): **Performance 100, Accessibility 100,
+  Best Practices 96, SEO 100.** The only Best-Practices ding was GENERAL -> "Browser errors were
+  logged to the console": *"An unknown error occurred when fetching the script."*
+- **Root cause of the 96 = the local dev server, not the app.** The console also showed a failed
+  `ws://127.0.0.1:5500/.../ws` connection ("Page entered Back-Forward Cache") - that's **Live
+  Server's injected auto-reload WebSocket/script**, which doesn't exist on GitHub Pages. The
+  "fetching the script" error was that same injected client, not `sw.js`.
+- **Confirmed:** re-ran on the deployed site in **Edge (incognito + normal)** -> **all four
+  categories 100.** So the shipped PWA is clean; the 96 was a Live Server artifact only.
+
+**Small SW hardening kept regardless (good practice):**
+- `sw.js` fetch handler now only caches complete, cacheable responses (`status === 200 &&
+  type === 'basic'`); partial (206, e.g. audio range) / opaque / error responses are skipped so
+  they can't throw on `cache.put()` or add console noise. (Complements the earlier individual-`add()`
+  install hardening.) No version bump for this - it's a no-behaviour-change safety tweak within v1.0.7.
+
+**Docs synced:** `Ideas.md` row -> **Built (MathFun v1.0.7)**. README changelog, userguide footer,
+SPEC-design/-tasks already updated for v1.0.7 earlier this session.
+
+**Status: v1.0.7 complete and verified.** All original PWA-checker report items are done
+(SW registration confirmed present, sw.js VERSION rolled, in-app version + changelog + session log
+bumped, served+offline verified, raster icons added). Deployed site scores 100 across the board.
+Remaining: none required. (Pending routine push of the latest local edits via GitHub Desktop if not
+already done.)

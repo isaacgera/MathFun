@@ -71,5 +71,6 @@
 - [ ] Update Mode screen, help/userguide, versioning; keep aligned with the "Maths Quiz Builder" idea
 
 ## Nice-to-have / later
-- [ ] Store-quality raster icons (192 / 512 / maskable PNGs) - currently a single SVG
+- [x] Store-quality raster icons (192 / 512 / maskable PNGs) + iOS apple-touch icon (v1.0.7);
+      generated from the SVGs via `icons/generate-icons.html`
 - [ ] Optional export/import of a child's progress

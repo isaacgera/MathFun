@@ -27,7 +27,7 @@ Learning/MathFun/
     avatars.js          the avatar set (10 characters)
   manifest.webmanifest  PWA manifest
   sw.js                 service worker (network-first; versioned cache)
-  icons/icon.svg        app icon
+  icons/                app icons: icon.svg + PNGs (192/512, maskable-512, apple-touch)
   README.md, LICENSE, userguide.html, SPEC-*.md, SESSION-LOG.md
   prototypes/           local sandbox (git-ignored)
 ```
@@ -114,8 +114,10 @@ Screens are sections toggled via an `.is-active` class; only one visible.
 
 ## 9. PWA (manifest + sw)
 - `manifest.webmanifest`: name "MathFun - Times Tables", short_name "MathFun", `display: standalone`,
-  portrait-primary, theme/background from tokens. Icon is a single **SVG** (`icons/icon.svg`); raster
-  PNGs (192/512/maskable) are a noted nice-to-have.
+  portrait-primary, theme/background from tokens. Icons: raster PNGs (`icon-192.png`,
+  `icon-512.png`, a dedicated `icon-maskable-512.png` with safe-zone artwork) declared in the
+  manifest, plus `icon.svg` kept as an extra and a 180x180 opaque `apple-touch-icon.png` for iOS
+  (v1.0.7). PNGs generated from the SVGs via `icons/generate-icons.html` (a one-time browser helper).
 - `sw.js`: **network-first** for same-origin GETs (fresh code online, refresh cache; fall back to
   cache offline) so updates aren't stuck behind a stale cache. Cache name carries the version (R8.4);
   registered only over http(s) (R8.5). `app.js` reloads once on `controllerchange` so new versions apply.
