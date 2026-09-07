@@ -2,9 +2,9 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Built & deployed (v1.0.6)
+- **Status:** v1.1.0 ported to the live app (Addition, Subtraction & Multiplication; Division "coming soon") - awaiting Isaac's GitHub Desktop push + deployed verify. Live currently serves v1.0.7 until pushed.
 - **Live:** https://isaacgera.github.io/MathFun/
-- **Description:** Playful times-tables game for kids 5-15 (multiplication 1x-20x; extendable to +/-/div later). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
+- **Description:** Playful maths game for kids 5-15. Multiplication 1x-20x shipped; v1.1 adds an operation picker (＋ － ✕ ÷) with full Addition & Subtraction (Division coming next). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
 
 ---
@@ -281,3 +281,237 @@ SPEC-design/-tasks already updated for v1.0.7 earlier this session.
 bumped, served+offline verified, raster icons added). Deployed site scores 100 across the board.
 Remaining: none required. (Pending routine push of the latest local edits via GitHub Desktop if not
 already done.)
+
+## v1.1 operations - Addition & Subtraction (prototype build) - 07 Sep 2026
+Started the long-planned multi-operation extension. Built **prototype-first** in `prototypes/`
+(version `1.1.0-proto`, storage `mathfunproto_`); **the shipped app at the root is untouched at
+v1.0.7** and will only change when Isaac has tested and signed off, then we port in one pass.
+
+**Mode:** Spec (multi-behaviour change on a shipped app - new screen + data-model change + generation).
+Build-standards flags unchanged from v1: Simple-tier rigour, vanilla no-build stack, mobile-first PWA.
+
+**Decisions agreed with Isaac:**
+- Landing page after profile create/select is now a **4-operation picker**: Addition, Subtraction,
+  Multiplication, Division. Picking one leads into that operation's own Mode/Play screens.
+- **Addition & Subtraction fully built this session.** **Division stubbed** as a visible
+  "Coming soon" tile (may build fully next; will use multiplication-style ranges).
+- **Per-operation progress** (separate bests/mastery/stats per operation).
+- **+/- difficulty by number size** (adds a 4th level, Super Hard, for +/- only):
+  Easy = single-digit (to 10), Medium = two-digit (to 100), Hard = three-digit (to 1000),
+  Super Hard = four-digit (to 10000). **Subtraction never goes negative** (bigger - smaller).
+- Difficulty sets are **operation-specific**: multiplication keeps Easy/Medium/Hard + Pick-a-table;
+  +/- use Easy/Medium/Hard/Super Hard (no table).
+
+**What changed (all in `prototypes/`):**
+- **SPEC docs** updated for v1.1: requirements **R11** (operations, ranges, non-negative subtraction,
+  division stub, per-op progress), design **section 12** (operations module, schema 2->3 migration,
+  new screen + routing, progress views), tasks **Phase 7**.
+- **New module `operations.js`** - single source of truth per operation (symbol, level set, ranges,
+  question + near-miss distractor generators). Multiplication delegates to the existing `questions.js`
+  unchanged; add/sub have full generators; division `generate:null` (coming soon).
+- **`state.js`** - progress is now keyed by operation: `ops.{mul:{bests,mastery}, add/sub/div:{bests,
+  rounds,answered,correct}}`. Badges + daily streak stay profile-level; longest in-round streak lifted
+  to profile level. **Migration schema 2 -> 3** moves the old flat `bests`/`mastery` into `ops.mul`
+  (no data loss). New helpers: `setOperation`, `currentOp`, `getOpProgress`, `recordBest`, `recordOpRound`.
+- **`game.js`** - operation-aware round: routes generation through the active operation, records A x B
+  mastery for multiplication only, and accumulates answered/correct for +/- accuracy stats.
+- **`mastery.js`/`rewards.js`** - read/write the per-operation slices; rewards records best per
+  (operation, level) and per-op round stats.
+- **`ui.js`** - new **Operations picker** screen; **Mode screen is operation-aware** (levels/labels per
+  operation, back-arrow to the picker, Pick-a-table only for multiplication); new **progress view**
+  (A x B grid for multiplication, a rounds/accuracy/best-per-level **summary** for +/-); Rewards shows
+  per-operation bests. Also aligned the create heading to "Create your profile" and made the header
+  logo a clickable reload (matching shipped v1.0.6).
+- **`index.html`** - added `#screen-ops`, clickable brand logo, updated Help copy for operations + levels.
+- **`styles.css`** - operation tiles (`.op-card`/`.op-symbol`/coming-soon), 4-up difficulty grid,
+  and the +/- progress summary, all using existing design tokens.
+- **`sw.js`** - brought in line with the shipped app: **network-first** same-origin caching (was
+  cache-first in the old proto), precaches `operations.js`, cache `mathfun-proto-1.1.0-proto`.
+
+**Flow now:** Who's playing -> (create/select) -> **Operations (+ - x div)** -> Mode -> Play -> Results.
+Back arrow on Mode returns to Operations so kids can switch operation freely.
+
+**Verification note:** as before, this Windows/Kiro shell can't run Node or a browser (and
+`grep_search` doesn't reach this OneDrive path), so code was cross-checked by reading every consumer
+of the changed APIs - module imports/exports line up, no dangling references. **Needs Isaac's manual
+Live Server pass** before we port.
+
+**Isaac's Live Server checklist (test the prototype, http not file://):**
+1. Serve `Learning/MathFun/prototypes/` via Live Server; open the URL. (First run creates a fresh
+   `mathfunproto_` profile - sandbox data, separate from the live app.)
+2. **Migration check (data safety):** if you already had prototype data, confirm your old
+   multiplication progress/bests still show up under Multiplication (it migrates into `ops.mul`).
+3. **Operations picker:** after creating/selecting a profile you land on the 4 tiles. Division shows
+   a "Coming soon" badge and does nothing when tapped. The other three open their Mode screen.
+4. **Addition & Subtraction:** each shows Easy/Medium/Hard/Super Hard. Play a round of each level and
+   sanity-check the number sizes (Easy single-digit ... Super Hard four-digit). Confirm **subtraction
+   never shows a negative answer**, and that the 4 options are believable (near-miss, no duplicates,
+   never negative).
+5. **Multiplication:** unchanged - Easy/Medium/Hard + Pick-a-table (1-20 dialog) still work; the
+   mastery grid still fills in.
+6. **Per-operation progress:** open "My Progress" from the header menu - multiplication shows the grid;
+   addition/subtraction show a rounds/accuracy/best-per-level summary. Best scores are separate per op.
+7. **Back arrow** on the Mode screen returns to the operations picker; the top-left logo reloads.
+8. **General:** Timer toggle, Sound, Music, keyboard answering (1-4), Light/Dark toggle on every
+   screen, and mobile/responsive layout.
+
+**Pending (next steps):** Isaac verifies -> then **port to the live app** (version -> 1.1.0, cache
+`mathfun-v1.1.0`, storage stays `mathfun_` with schema-3 migration, README changelog + userguide,
+Ideas.md -> Built (MathFun v1.1.0), deploy + verify). Then optionally build **Division** fully.
+`Ideas.md` row is currently **In Progress (MathFun v1.1, from v1.0.7)**.
+
+### v1.1 prototype polish (Isaac's first-test feedback) - 07 Sep 2026
+Three fixes after Isaac tested the `1.1.0-proto` build via Live Server (still prototype-only):
+- **Bug: create-profile skipped past an empty name.** `needsChoice()` in `ui.js renderSetup`
+  validated gender/age/avatar but not the name step, so a blank name advanced (silently defaulting
+  to "Player"). Added a name check ("Please type your name to carry on.") that blocks Next until a
+  non-blank name is entered; the hint now also clears as soon as the child starts typing.
+- **Operation tiles made more fun + aligned.** Reworked `.op-card`/`.op-symbol` in `styles.css`:
+  bigger chunky rounded "squircle" symbol chips echoing the MathFun app icon (inset highlight +
+  soft shadow + text-shadow), a playful tilt/scale on hover, uniform card height/alignment, and a
+  distinct bright gradient per operation (add=green, sub=orange, mul=purple, div=pink) with matching
+  hover borders. Added an `op-<key>` class per tile to drive the colours.
+- **Background music made more engaging.** Replaced the single-oscillator pentatonic loop in
+  `sound.js` with a bouncier ~150-bpm loop: a 16-step plucky triangle lead melody (C major, with
+  rests for bounce), a soft sine bass on each beat (C-F-G-C), and a light high-passed noise hi-hat on
+  the off-beats for groove. Still synthesized WebAudio (no files), low volume behind the game; exports
+  (`startMusic`/`stopMusic`/`isMusicOn`) unchanged so nothing else needed touching.
+
+Verified by cross-reading consumers (sound exports unchanged; wizard flow intact). Still needs Isaac's
+Live Server recheck of these three, then we continue toward the port. Prototype remains `1.1.0-proto`.
+
+### v1.1 prototype - emoji tiles + real back navigation + header Home - 07 Sep 2026
+Second round of Isaac's feedback (still prototype-only, `1.1.0-proto`):
+- **Operation tiles now use real emoji** (\u2795 \u2796 \u2716\uFE0F \u2797) instead of CSS-styled glyphs.
+  The `.op-symbol` chip became a soft per-operation tinted "squircle" (green/orange/purple/pink)
+  with the emoji shown at its natural colour - reads as proper fun emojis, still echoing the app icon.
+  (The `emoji` fields already existed in `operations.js`; the tile markup now renders `op.emoji`.
+  `op.symbol` is still used for the compact mode tag like "\u00D7 Hard".)
+- **Back now returns to the ACTUAL previous screen**, not always Home. Added a small **nav history
+  stack** in `app.js`: navigable destinations are named routes (`who/ops/home/progress/rewards/help/
+  editProfile`); `navigate(name)` pushes the current route, every back arrow calls `goBack()` which
+  pops to where you really came from (floor = Operations picker). The **Play screen is deliberately
+  excluded** - its back is still a "quit round -> Mode screen" (round abandoned), not a history pop,
+  so a child can't be dropped mid-question by surprise. Difficulty picks re-render Home in place
+  without polluting history.
+- **New header Home button** (`\uD83C\uDFE0 Home`, icon + text to match the theme toggle and chip on
+  either side), sitting between the theme toggle and the profile chip. It jumps to the **Operations
+  picker** (our agreed "home") via `resetTo('ops')` and only shows once a profile is active. Renamed
+  it `headerHomeBtn` to avoid an id clash with the Results screen's existing `homeBtn`.
+
+Verified by tracing the route flows (ops->home->progress backs to home not ops; home back goes to ops;
+header Home resets to ops; play quit returns to Mode). Chip menu now routes through `navigate()` so
+Progress/Rewards/Help/Profile all get correct back behaviour. Prototype-only; awaiting Isaac's recheck,
+then we continue toward the port.
+
+## v1.1.0 ported to the live app & release chores done - 07 Sep 2026
+Isaac signed off the prototype, so I did the one-pass port from `prototypes/` to the app root and
+the release chores. **Not yet pushed** - Isaac pushes via GitHub Desktop (as usual).
+
+**Ported to `js/` + root (with production settings, not a blind copy):**
+- `operations.js` (new), `game.js`, `mastery.js`, `rewards.js`, `ui.js`, `sound.js` - carried over
+  as finalized in the prototype.
+- `state.js` - per-operation progress + schema 2->3 migration, but with the **production
+  `mathfun_` prefix** and - importantly - the shipped app's **app-level theme**
+  (`getTheme`/`setTheme` at store root), NOT the prototype's per-`settings` theme. This avoids
+  regressing the v1.0.5 theme fix. Added theme carry-over in the v1 migration too.
+- `app.js` - v1.1 nav-history stack + operations flow + header Home, but kept the shipped
+  **delegated `#themeToggle` click** + `getTheme/setTheme`. `APP_VERSION` -> **1.1.0**.
+- `index.html` - added `#screen-ops` + header `headerHomeBtn` (renamed to avoid clashing with the
+  Results screen's `homeBtn`) + operations Help copy + updated meta description. **No prototype
+  banner**; kept the production head + `apple-touch-icon.png`.
+- `styles.css` - added the v1.1 blocks (emoji operation tiles, per-op progress summary, compact
+  header buttons). Kept the shipped production dark-theme setup.
+- `sw.js` - `VERSION` -> **1.1.0** (cache `mathfun-v1.1.0`), added `operations.js` to precache;
+  kept the v1.0.7 network-first strategy + icon precache + individual-`add()` hardening.
+- `manifest.webmanifest` - name -> "MathFun - Maths Practice", description updated; icons unchanged.
+
+**Release chores:**
+- **README** - intro/features/layout updated for operations + per-op progress; **v1.1.0 changelog**
+  entry added; new `operations.js` in the layout; future-ideas trimmed (Division next).
+- **userguide.html** - "choose what to practise" + per-operation levels + per-op progress + nav
+  (back/Home) sections; footer -> v1.1.0.
+- **SPEC** requirements/design/tasks status -> **Shipped v1.1.0**; Phase 7 ticked (deploy left open);
+  design sec 12.7 notes the app-level-theme preservation.
+- **Ideas.md** row -> **Built (MathFun v1.1.0)**.
+
+**Data-safety note (the important one):** live users' data is schema 2 (flat per-profile
+`bests`/`mastery`). On first load of v1.1.0 the schema-3 migration moves it into `ops.mul` and lifts
+`longestStreak` to profile level; `badges`/daily streak/theme are preserved. This is written to be
+non-destructive but has NOT been exercised in a browser here.
+
+**Isaac - to ship & verify:**
+1. **Push** via GitHub Desktop (review the diff; `prototypes/` is git-ignored so only the app +
+   docs go up). Commit message suggestion: `MathFun v1.1.0 - operations (add/sub/mul), per-op
+   progress, nav + header Home`.
+2. After Pages updates, **hard-refresh** (Ctrl+Shift+R) or reopen the installed app once so the
+   `mathfun-v1.1.0` service worker activates.
+3. **Verify (deployed, ideally on a profile that already has multiplication history):**
+   - Old multiplication progress/bests still show under Multiplication -> My Progress (migration OK).
+   - Operation picker shows 4 tiles; Division = "coming soon"; +/- levels play with correct number
+     sizes; subtraction never negative.
+   - Theme toggle works on every screen incl. before a profile (the v1.0.5 regression guard).
+   - Back returns to the previous screen; header Home jumps to the picker.
+   - Optional: Lighthouse PWA/installability still green; app installs and runs offline.
+
+**Then:** build **Division** fully (its own session), multiplication-style ranges.
+
+## Pre-push local check - icon files fix - 07 Sep 2026
+While verifying the local v1.1.0 build before pushing, DevTools -> Application -> Manifest showed
+the four PNG icons (and the SVG) failing to load. Investigation revealed the real cause was
+**pre-existing, not a v1.1 regression**: `git ls-files icons/` showed only `icon.svg`,
+`icon-maskable.svg` and `generate-icons.html` were ever tracked - **the four generated PNGs
+(`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`) were never
+committed** after being generated in the v1.0.7 session. So the deployed GitHub Pages site has been
+missing them since v1.0.7 (the "Lighthouse 100" then was on Isaac's local machine where the PNGs
+existed), and this working copy didn't have them either.
+
+**Fix:** Isaac re-generated the four PNGs via `icons/generate-icons.html` and copied them into
+`icons/`. Confirmed all four are now present and show as new untracked files in git, so they'll be
+committed and pushed this time - closing the icon gap on the deployed site permanently. `.gitignore`
+does not exclude PNGs (it never did), so nothing else was needed.
+
+**Remaining Manifest notices (left as-is, not blocking):**
+- Two "Richer PWA Install UI won't be available..." lines - informational only; they ask for
+  optional install **screenshots** (`form_factor: wide`). Not required for install; deferred (avoid
+  scope creep on an operations release).
+- One "icon.svg failed to load" line locally - the SVG file is valid and present (and the PNGs beside
+  it load), so this is a Live-Server/DevTools artifact for SVG manifest icons, not a real fault. The
+  SVG is only an extra in the icons array; the three PNGs satisfy all install requirements. Expected
+  to not appear on the deployed HTTPS host (correct `image/svg+xml` MIME). Decision: **leave the
+  manifest untouched**; confirm on the deployed Manifest panel after push.
+
+**Net:** the four PNGs are the only real change from this check; everything else is informational.
+Isaac to commit + push v1.1.0 (code + docs + the four icons) via GitHub Desktop, then verify the
+deployed Manifest panel is clean.
+
+## Next session - direction (Division + FunFacts) - noted 07 Sep 2026
+Two things planned for the next MathFun session:
+
+**1. Division - build it fully.** Complete the stubbed Division operation (currently "coming soon").
+Use multiplication-style ranges (whole-number division as the inverse of the tables so answers are
+exact), per-operation progress like the others, believable near-miss distractors. Straightforward
+extension of the existing v1.1 operations engine (`operations.js` + the Mode/Play flow); flip
+`div.playable` to true and add its generator + level set. Likely Quick Spec, prototype-first.
+
+**2. New "FunFacts" tab - explore MCP servers / APIs.** Add a FunFacts tab/section that surfaces
+fun (maths/number?) facts, sourced by trying out **MCP servers / APIs from
+https://app.mcpmarket.com/**. This is an exploration/learning goal as much as a feature.
+
+> **Flag for next session (decide the track FIRST, likely Plan mode):** FunFacts is a departure
+> from MathFun's current stance. To date the app is strictly **local-first, offline, no network,
+> no accounts, no tracking** (see build rules + data/privacy stance). Pulling facts from an MCP
+> server or external API means:
+> - **Outbound network calls** and a runtime dependency (breaks the pure-offline guarantee - need a
+>   graceful offline fallback, e.g. a small bundled fact set).
+> - Possible **API keys/secrets** - must stay out of client-side code / the repo; may need a
+>   proxy/serverless bit, which changes the "just static hosting" deployment model.
+> - **Privacy** - confirm no personal/child data leaves the device; only fact requests go out.
+> - Whether this even belongs inside MathFun (a kids' maths game) or is better as its own app.
+> - MCP is normally a Kiro/IDE-side thing; using an MCP server as a *runtime* data source for a
+>   shipped web app is a different pattern - clarify what's actually intended (build-time fact fetch
+>   vs runtime API vs an MCP-backed agent feature = Bucket B / AgentCore territory per Ideas.md).
+> Agree scope, stack, platform, data/privacy and offline behaviour with Isaac before writing code.
+
+Order suggestion: do **Division** first (clean, in-keeping, low-risk), then take **FunFacts** into a
+Plan-mode discussion to settle the network/privacy/deployment track before building.

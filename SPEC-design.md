@@ -1,11 +1,13 @@
 ﻿# MathFun - Design
 
-- **Category:** Learning | **Tier:** Simple | **Status:** Built & deployed (v1.0.6)
+- **Category:** Learning | **Tier:** Simple | **Status:** Shipped v1.1.0 (Addition, Subtraction & Multiplication; Division "coming soon")
 - **Stack:** Vanilla HTML/CSS/JS, no build step. **Platform:** mobile-first installable PWA.
 - **Licence:** MIT. **Live:** https://isaacgera.github.io/MathFun/
 
-This design is intentionally concise (Simple tier). It reflects the app **as shipped** (built
-prototype-first in `prototypes/`, then ported to the app root as v1.0.0 and iterated to v1.0.6).
+This design is intentionally concise (Simple tier). Sections 1-11 reflect the multiplication app
+(built prototype-first, ported to the app root as v1.0.0 and iterated to v1.0.7). **Section 12
+covers v1.1** (operations - Addition, Subtraction, Multiplication, with Division stubbed), built
+prototype-first and **now ported and shipped as v1.1.0**.
 
 ## 1. Architecture & file layout (as shipped)
 No framework, no bundler. ES modules loaded from `index.html`. The shipping app lives at the
@@ -137,6 +139,92 @@ Screens are sections toggled via an `.is-active` class; only one visible.
   from it. Shipped v1.0.0, then patched to **v1.0.6** (theme fix, network-first SW, icon, UI tweaks).
   Changelog in README.
 
+## 12. v1.1 - Operations (in progress, prototype)
+Extends the game from multiplication-only to a four-operation picker, adding full Addition &
+Subtraction and stubbing Division. Built in `prototypes/` (version `1.1.0-proto`,
+storage `mathfunproto_`); ported to the shipped app only after Isaac verifies.
+
+### 12.1 New module `operations.js`
+A single source of truth for per-operation behaviour, so `questions.js`/`game.js`/`ui.js` stay
+generic and just ask the active operation for what they need.
+
+```js
+OPERATIONS = {
+  mul: { key:'mul', symbol:'\u00D7', name:'Multiplication', playable:true,
+         levels:['easy','medium','hard','table'], generate(mode, mastery), ... },
+  add: { key:'add', symbol:'+',      name:'Addition',       playable:true,
+         levels:['easy','medium','hard','superhard'], generate(mode), ... },
+  sub: { key:'sub', symbol:'\u2212', name:'Subtraction',    playable:true,
+         levels:['easy','medium','hard','superhard'], generate(mode), ... },
+  div: { key:'div', symbol:'\u00F7', name:'Division',       playable:false /* coming soon */ },
+}
+```
+- `mul.generate` reuses the existing `questions.js` pool + near-miss logic unchanged.
+- `add`/`sub` generate operands within the level's number range (below) and build four options.
+- Difficulty **level sets are operation-specific** (mul keeps `table`; add/sub use `superhard`).
+
+### 12.2 Difficulty ranges for + / - (R11.4, R11.5)
+| Level | Digits | Max operand | Notes |
+|---|---|---|---|
+| Easy | single | 10 | operands 1-9 (sum may reach ~18 for add) |
+| Medium | two | 100 | operands up to 99 |
+| Hard | three | 1000 | operands up to 999 |
+| Super Hard | four | 10000 | operands up to 9999 |
+
+- **Addition:** pick `a`, `b` within the level range; `correct = a + b`.
+- **Subtraction:** pick two in range, order so `a >= b`; `correct = a - b` (never negative, R11.5).
+
+### 12.3 Distractors for + / - (R11.7)
+Believable near-misses drawn from: `correct +/- 1`, `correct +/- 10`, `correct +/- a-single-digit`,
+and a carry/borrow-style slip (e.g. off by 10 or by 2). De-dupe, drop <= 0 and any equal to
+`correct`, keep 3, top up with small offsets if short, then shuffle the 4 tiles (mirrors sec 4).
+
+### 12.4 Data model change (schema 2 -> 3, per-operation progress; R11.8)
+Progress becomes keyed by operation. Migration wraps the existing flat `bests`/`mastery` into
+`ops.mul` so no data is lost; `badges` and `streakDays` stay profile-level (shared across ops).
+
+```jsonc
+"progress": {
+  "settings": { "operation": null, "difficulty": null, "table": null,
+                "timed": false, "sound": true, "music": false },
+  "ops": {
+    "mul": { "bests": { "easy":0,"medium":0,"hard":0,"table":0 }, "mastery": { "7x8": {"attempts":[1,1,0,1,1]} } },
+    "add": { "bests": { "easy":0,"medium":0,"hard":0,"superhard":0 }, "rounds":0, "answered":0, "correct":0 },
+    "sub": { "bests": { "easy":0,"medium":0,"hard":0,"superhard":0 }, "rounds":0, "answered":0, "correct":0 },
+    "div": { "bests": {}, "rounds":0, "answered":0, "correct":0 }
+  },
+  "bestsLongestStreak": 0,
+  "streakDays": { "count":0, "lastPlayedISO":null },
+  "badges": ["first_perfect"]
+}
+```
+- `getState()` stays for compatibility; new helpers `getOpProgress(opKey)` / `setOperation(key)`
+  expose the active operation's slice. `operation`/`difficulty`/`table` all reset on load & switch.
+- `mastery.js` records **only for `mul`** (A x B facts). `add`/`sub`/`div` accumulate simple
+  round/accuracy stats instead.
+
+### 12.5 New screen + routing (R11.1, R11.2)
+- **Operations picker** (`#screen-ops`): four tiles (＋ － ✕ ÷). `div` renders a "Coming soon"
+  state (disabled, badge). Sits between "profile chosen" and the Mode screen.
+- Flow: `Who's playing` -> **Operations** -> `Mode (Home)` -> `Play` -> `Results`.
+  The Mode screen gains a back arrow to Operations; the header logo still reloads to the start.
+- Mode screen is **operation-aware**: it reads the active operation's `levels` and labels;
+  Pick-a-table only shows for `mul`; the mode tag on Play shows the operation symbol.
+
+### 12.6 Progress views (R11.9)
+- **Multiplication:** the existing A x B mastery grid, unchanged.
+- **Addition/Subtraction:** a compact per-operation **summary** (rounds played, best score per
+  level, overall accuracy). Reached from the profile menu; shows the summary for the active
+  operation (with a note when a grid isn't applicable).
+
+### 12.7 Versioning (shipped)
+Built in the prototype at `1.1.0-proto`, then ported to the app root and shipped as **v1.1.0**
+(`APP_VERSION` 1.1.0, `sw.js` cache `mathfun-v1.1.0`, storage stays `mathfun_`; schema-3 migration
+runs on first load). The port preserved the shipped app's app-level theme (`state.getTheme/setTheme`
++ delegated toggle) rather than the prototype's per-settings theme, so the v1.0.5 theme fix is not
+regressed.
+
 ## Deferred to later versions
-Other operations (+ - x div), number-pad/typed input, progress export/import, cloud sync,
-leaderboards, raster PNG icons. (Keep multi-operation growth aligned with the "Maths Quiz Builder" idea.)
+Fully playable **Division** (planned right after +/-; multiplication-style ranges), number-pad/
+typed input, progress export/import, cloud sync, leaderboards. (Keep multi-operation growth
+aligned with the "Maths Quiz Builder" idea.)

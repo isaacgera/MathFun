@@ -1,7 +1,7 @@
 {
-  "name": "MathFun - Times Tables",
+  "name": "MathFun - Maths Practice",
   "short_name": "MathFun",
-  "description": "A playful times-tables game for kids. Practise multiplication 1x to 20x with fun rewards.",
+  "description": "A playful maths game for kids. Practise addition, subtraction and multiplication (division coming soon) with fun rewards.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

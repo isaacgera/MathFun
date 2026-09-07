@@ -1,24 +1,31 @@
 # MathFun
 
-A playful, local-first **times-tables game** for kids aged 5-15. Practise multiplication
-from **1x1 to 20x20** by tapping one of four answers, and earn stars, streaks and badges
-along the way. Built as an installable, offline-capable PWA.
+A playful, local-first **maths game** for kids aged 5-15. Choose an operation, pick how hard
+you want to play, tap one of four answers, and earn stars, streaks and badges along the way.
+Built as an installable, offline-capable PWA.
 
 **Live demo:** https://isaacgera.github.io/MathFun/
 
-> v1 covers multiplication only. The name is kept broad so addition, subtraction and
-> division can be added later.
+> Covers **Addition, Subtraction and Multiplication**. **Division** is on the way
+> (shown as "coming soon"). Multiplication runs 1x1 to 20x20.
 
 ## Features
+- **Choose an operation** - a landing page with **Addition, Subtraction, Multiplication**
+  and **Division** (coming soon). Switch freely with the back arrow or the header **Home** button.
 - **Multiple players** - each child has their own profile (name, boy/girl, age 5-15,
-  fun character avatar) with their own progress, bests, badges and mastery.
-- **Difficulty levels** - Easy (tables 1-5), Medium (1-10), Hard (1-20), plus a
-  **Pick a table** dialog to drill any single table 1x-20x.
+  fun character avatar) with their own **per-operation** progress, bests, badges and mastery.
+- **Difficulty levels**
+  - Multiplication: Easy (tables 1-5), Medium (1-10), Hard (1-20), plus a **Pick a table**
+    dialog to drill any single table 1x-20x.
+  - Addition & Subtraction: Easy (single digit, to 10), Medium (two digit, to 100),
+    Hard (three digit, to 1000), **Super Hard** (four digit, to 10000). Subtraction never
+    produces a negative answer.
 - **Multiple-choice answers** - four options with believable near-miss distractors.
 - **10-question rounds** - untimed by default, with an optional **Timer** challenge.
 - **Encouraging, personalised feedback** - praise uses the child's name and boy/girl term.
 - **Rewards** - stars per round, daily streaks, and collectable badges.
-- **My Progress** - a colourful mastery grid (1x-20x) showing solid / okay / needs-work facts.
+- **My Progress** - multiplication shows a colourful mastery grid (1x-20x); addition and
+  subtraction show a summary (rounds played, best score per level, accuracy).
 - **Sound & Music** - synthesized effects and a gentle background tune (both optional).
 - **Light / dark theme** - follows the device and can be toggled; choice persists.
 - **Accessible & mobile-first** - large tap targets, keyboard answering (keys 1-4),
@@ -58,8 +65,9 @@ MathFun/
   icons/                app icons: icon.svg + PNGs (192/512, maskable-512, apple-touch)
   js/
     app.js              bootstrap, routing, profile flow, wiring
-    state.js            localStorage (the only module that touches it)
-    questions.js        fact pools + near-miss distractor generation
+    state.js            localStorage (the only module that touches it); per-operation progress
+    questions.js        multiplication fact pools + near-miss distractor generation
+    operations.js       per-operation config (symbols, levels, ranges, question generators)
     game.js             round lifecycle, scoring, timer
     rewards.js          stars, streaks, badges
     mastery.js          per-fact mastery + grid data
@@ -76,6 +84,20 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.1.0 - 07 Sep 2026
+- **Operations!** New landing page to choose **Addition, Subtraction, Multiplication** or
+  Division (division shown as "coming soon"). Addition & Subtraction are fully playable with
+  their own number-size difficulty levels: Easy (to 10), Medium (to 100), Hard (to 1000),
+  Super Hard (to 10000). Subtraction never goes negative; +/- answers use believable near-miss
+  distractors.
+- **Per-operation progress.** Best scores, streaks and stats are tracked separately per
+  operation. Multiplication keeps its A x B mastery grid; addition/subtraction show a rounds/
+  accuracy/best-per-level summary. Existing multiplication progress is migrated with no data loss.
+- **Navigation:** each screen's back arrow now returns to the actual previous screen, and a new
+  header **Home** button jumps to the operation picker.
+- **Polish:** colourful emoji operation tiles, a more upbeat background tune, and a fix so the
+  create-profile wizard no longer skips past an empty name.
+
 ### v1.0.7 - 04 Sep 2026
 - PWA install polish: added raster PNG icons (192, 512), a dedicated **maskable** 512 icon
   (artwork kept in the adaptive-icon safe zone so Android launchers don't crop it), and a
@@ -128,6 +150,6 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 MIT - see [LICENSE](./LICENSE).
 
 ## Notes / future ideas
-- Add other operations (+, -, x). (Keep aligned with the separate "Maths Quiz Builder" idea.)
-- Store-quality raster icons (192 / 512 / maskable PNGs) - currently a single SVG icon.
+- **Division** - build it fully (currently "coming soon"), using multiplication-style ranges.
+  (Keep aligned with the separate "Maths Quiz Builder" idea.)
 - Optional export/import of a child's progress.

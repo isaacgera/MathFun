@@ -1,6 +1,6 @@
 ﻿# MathFun - Tasks
 
-- **Tier:** Simple | **Status:** Built & deployed (v1.0.0) | **Workflow:** prototype-first, ported to v1.0.0.
+- **Tier:** Simple | **Status:** Shipped v1.1.0 (Addition, Subtraction & Multiplication; Division "coming soon") | **Workflow:** prototype-first.
 - **Live:** https://isaacgera.github.io/MathFun/
 - Shipping app at `Learning/MathFun/` root; the sandbox it was built in is kept at `Learning/MathFun/prototypes/` (git-ignored, not published).
 
@@ -63,12 +63,19 @@
 - [x] Update SESSION-LOG.md; tick SPEC-tasks; set Ideas.md -> Built (MathFun v1.0.0)
 - [x] Deploy to GitHub Pages + verify hosted PWA over HTTPS -> https://isaacgera.github.io/MathFun/
 
-## Planned next - v1.1: more operations
-- [ ] Add an operation picker (x / + / - / div) alongside difficulty
-- [ ] Generalise question + near-miss distractor generation per operation
-      (division as inverse of the tables; sensible +/- ranges by age/difficulty)
-- [ ] Extend the mastery model + grid to be per-operation (not just AxB facts)
-- [ ] Update Mode screen, help/userguide, versioning; keep aligned with the "Maths Quiz Builder" idea
+## Phase 7 - v1.1: operations (SHIPPED v1.1.0)
+Built prototype-first in `prototypes/` (`1.1.0-proto`), verified by Isaac, then ported to the app root.
+- [x] SPEC updates for v1.1 (requirements R11, design sec 12, this tasks phase)
+- [x] `state.js` - per-operation progress; migrate flat bests/mastery -> `ops.mul` (schema 2 -> 3, no data loss); `operation` in settings; `getOpProgress`/`setOperation` (R11.8, R7.4)
+- [x] `operations.js` - per-operation config (symbol, level set, ranges, generate + distractors); mul reuses existing logic; add/sub full; div stub (R11.3-R11.7)
+- [x] `questions.js`/`game.js` - route generation through the active operation; mastery records mul only; add/sub accumulate round stats
+- [x] `ui.js`/`app.js` - Operations picker screen (＋ － ✕ ÷, div "coming soon"); operation-aware Mode screen; nav history stack (back = previous screen); header Home button; per-op progress summary for +/- (R11.1, R11.2, R11.9)
+- [x] `index.html`/`styles.css` - `#screen-ops` markup + emoji tile styles; prototype `1.1.0-proto`; sw cache bump
+- [x] Prototype Help copy updated for operations + new levels
+- [x] Isaac verified via Live Server (operations, +/- ranges, subtraction non-negative, migration, nav, emoji tiles, music, empty-name fix)
+- [x] Port to shipped app: `APP_VERSION` 1.1.0, cache `mathfun-v1.1.0`, storage `mathfun_` (schema-3 migration); preserved app-level theme; README changelog + userguide + SPEC status; manifest name/description; Ideas.md -> Built (MathFun v1.1.0)
+- [ ] Deploy (Isaac pushes via GitHub Desktop) + verify hosted PWA (migration, Lighthouse, install)
+- [ ] (Then) Division built fully - multiplication-style ranges
 
 ## Nice-to-have / later
 - [x] Store-quality raster icons (192 / 512 / maskable PNGs) + iOS apple-touch icon (v1.0.7);

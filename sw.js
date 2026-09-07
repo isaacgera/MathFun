@@ -4,7 +4,7 @@
 // version; bump VERSION on each release. skipWaiting + clients.claim make a new worker take
 // over promptly.
 
-const VERSION = '1.0.7';
+const VERSION = '1.1.0';
 const CACHE = `mathfun-v${VERSION}`;
 
 const ASSETS = [
@@ -20,6 +20,7 @@ const ASSETS = [
   './js/app.js',
   './js/state.js',
   './js/questions.js',
+  './js/operations.js',
   './js/game.js',
   './js/rewards.js',
   './js/mastery.js',

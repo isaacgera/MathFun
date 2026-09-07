@@ -1,27 +1,35 @@
 // mastery.js - per-fact mastery tracking + data for the mastery grid (SPEC R6, sec 7).
+// v1.1: multiplication only. Mastery lives under the active profile's ops.mul.mastery.
 // Mastered = >=5 attempts AND >=80% correct (>=4 of last 5). Okay = some attempts below that.
 // Needs work = few attempts or low accuracy.
 
-import { getState, save } from './state.js';
+import { getOpProgress, save } from './state.js';
 import { factId } from './questions.js';
 
 const MAX_ATTEMPTS = 5;
 
+// The multiplication mastery map (creates it if missing).
+function mulMastery() {
+  const mul = getOpProgress('mul');
+  if (!mul.mastery) mul.mastery = {};
+  return mul.mastery;
+}
+
 // Record one attempt for a fact. correct = boolean.
 export function record(a, b, correct) {
-  const s = getState();
+  const m = mulMastery();
   const id = factId(a, b);
-  const rec = s.mastery[id] || { attempts: [] };
+  const rec = m[id] || { attempts: [] };
   rec.attempts.push(correct ? 1 : 0);
   if (rec.attempts.length > MAX_ATTEMPTS) rec.attempts = rec.attempts.slice(-MAX_ATTEMPTS);
-  s.mastery[id] = rec;
+  m[id] = rec;
   save();
 }
 
 // Classify a single fact's state: 'solid' | 'okay' | 'needs' | 'new'.
 export function stateFor(a, b) {
-  const s = getState();
-  const rec = s.mastery[factId(a, b)];
+  const m = mulMastery();
+  const rec = m[factId(a, b)];
   if (!rec || rec.attempts.length === 0) return 'new';
   const correct = rec.attempts.filter((x) => x === 1).length;
   const acc = correct / rec.attempts.length;

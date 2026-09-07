@@ -1,17 +1,22 @@
-// app.js - bootstrap, screen routing, profile flow, and wiring (SPEC sec 1).
+// app.js - bootstrap, screen routing, profile flow, and wiring (SPEC sec 1, sec 12).
 // Exposes a small window.MathFun bridge so markup-created buttons can call back.
+// v1.1: Operations picker between profile-selection and the Mode screen; a nav history
+// stack so each screen's back arrow returns to the ACTUAL previous screen; and a header
+// Home button that jumps to the Operations picker.
 
 import * as state from './state.js';
 import * as game from './game.js';
 import * as rewards from './rewards.js';
 import * as sound from './sound.js';
 import * as ui from './ui.js';
+import { getOperation } from './operations.js';
 
-export const APP_VERSION = '1.0.7';
+export const APP_VERSION = '1.1.0';
 
 const screens = {
   who: document.getElementById('screen-who'),
   setup: document.getElementById('screen-setup'),
+  ops: document.getElementById('screen-ops'),
   home: document.getElementById('screen-home'),
   play: document.getElementById('screen-play'),
   results: document.getElementById('screen-results'),
@@ -24,15 +29,51 @@ let round = null;
 let timerId = null;
 let timerStart = 0;
 
-// ---------- Theme ----------
-// Simple two-way Light <-> Dark toggle: every tap visibly flips the palette (no
-// identical-looking "auto" middle state). Always applies an explicit data-theme so the
-// result never depends on the device's OS setting.
+// ---------- Navigation history ----------
+// Each navigable destination is a named route mapped to its render function. We keep a
+// stack of visited routes so a screen's back arrow returns to the actual previous screen,
+// not always "home". The Play screen is intentionally NOT a route: its back is a
+// deliberate "quit round" that returns to the Mode screen.
+const routes = {
+  who: () => renderWhoPlaying(),
+  ops: () => renderOperationsScreen(),
+  home: () => renderHomeScreen(),
+  progress: () => renderProgressScreen(),
+  rewards: () => renderRewardsScreen(),
+  help: () => renderHelpScreen(),
+  editProfile: () => renderEditProfile(),
+};
+let navStack = [];        // history of route names (excludes the current one)
+let currentRoute = null;  // route name currently shown
+
+// Go to a route, remembering where we came from (unless replacing the current entry).
+function navigate(name, { replace = false } = {}) {
+  if (!routes[name]) return;
+  if (!replace && currentRoute && currentRoute !== name) navStack.push(currentRoute);
+  currentRoute = name;
+  routes[name]();
+}
+
+// Back to the previous route; fall back to the operations picker (or who-playing).
+function goBack() {
+  const prev = navStack.pop();
+  currentRoute = null; // navigate() replaces the current entry, no re-push
+  navigate(prev || (state.activeProfile() ? 'ops' : 'who'), { replace: true });
+}
+
+// Reset the history to a single root (used on jumps "home" and after profile changes).
+function resetTo(name) {
+  navStack = [];
+  currentRoute = null;
+  navigate(name, { replace: true });
+}
+
+// ---------- Theme (app-level, two-way Light <-> Dark) ----------
+// Always applies an explicit data-theme so the result never depends on the OS after first use.
 function osPrefersDark() {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 function resolveTheme(theme) {
-  // Any legacy/auto/empty value resolves to the current OS preference on first use.
   if (theme === 'light' || theme === 'dark') return theme;
   return osPrefersDark() ? 'dark' : 'light';
 }
@@ -50,69 +91,77 @@ function updateThemeButton(theme) {
   const btn = document.getElementById('themeToggle');
   if (!btn) return;
   const resolved = resolveTheme(theme);
-  // Show what a tap will switch TO, so the action is clear.
   const switchTo = resolved === 'dark' ? 'light' : 'dark';
-  btn.textContent = resolved === 'dark' ? '\u2600\uFE0F Light' : '\uD83C\uDF19 Dark';
+  btn.textContent = resolved === 'dark' ? '\uD83C\uDF19 Dark' : '\u2600\uFE0F Light';
   btn.setAttribute('aria-label', `Switch to ${switchTo} theme`);
   btn.setAttribute('title', `Switch to ${switchTo} theme`);
 }
 
-// ---------- Profile chip (header) ----------
-function refreshChip() {
+// ---------- Header (Home button + profile chip) ----------
+function updateHeader() {
   const p = state.activeProfile();
+  const homeBtn = document.getElementById('headerHomeBtn');
+  if (homeBtn) homeBtn.classList.toggle('hidden', !p); // only when a profile is active
   ui.renderProfileChip(p, {
-    profile: showEditProfile,
-    rewards: showRewards,
-    progress: showMastery,
-    help: () => ui.showScreen('screen-help'),
+    profile: () => navigate('editProfile'),
+    rewards: () => navigate('rewards'),
+    progress: () => navigate('progress'),
+    help: () => navigate('help'),
     switch: showWhoPlaying,
   });
 }
 
 // ---------- Profile flow ----------
+// The create/setup screen is a modal-like flow, rendered directly (not a history route);
+// it returns to a real route on save/cancel.
 function boot() {
+  navStack = [];
+  currentRoute = null;
   if (!state.hasProfiles()) {
     showSetup({ canCancel: false });
   } else if (!state.activeProfile()) {
-    showWhoPlaying();
+    resetTo('who');
   } else {
-    goHome();
+    resetTo('ops');
   }
 }
 
 function showWhoPlaying() {
+  sound.stopMusic();
+  resetTo('who'); // choosing a player is a fresh start; clear history
+}
+
+function renderWhoPlaying() {
   sound.stopMusic();
   ui.renderWhoPlaying(screens.who, state.listProfiles(), {
     onPick: (id) => { state.setActive(id); afterProfileChosen(); },
     onAdd: () => showSetup({ canCancel: state.hasProfiles() }),
   });
   ui.showScreen('screen-who');
-  refreshChip();
+  updateHeader();
 }
 
-// CREATE new profile (stepped wizard).
+// CREATE new profile (stepped wizard) - direct render, not a history route.
 function showSetup({ canCancel }) {
   ui.renderSetup(screens.setup, { canCancel }, {
-    onSave: (data) => {
-      state.createProfile(data);
-      // No difficulty pre-selected - the child picks it on the play screen each time.
-      afterProfileChosen();
-    },
-    onCancel: () => (state.activeProfile() ? goHome() : showWhoPlaying()),
+    onSave: (data) => { state.createProfile(data); afterProfileChosen(); },
+    onCancel: () => (state.activeProfile() ? resetTo('ops') : resetTo('who')),
   });
   ui.showScreen('screen-setup');
-  refreshChip();
+  updateHeader();
 }
 
-// EDIT existing profile (summary view + all-fields-at-once edit).
-function showEditProfile() {
+// EDIT existing profile (summary view + all-fields-at-once edit) - a history route.
+function renderEditProfile() {
   const profile = state.activeProfile();
-  if (!profile) return;
+  if (!profile) { goBack(); return; }
   ui.renderProfileSummary(screens.setup, profile, {
-    onHome: goHome,
+    onHome: goBack,
     onSave: (data) => {
       state.updateProfile(profile.id, data);
-      afterProfileChosen();
+      const s = state.getState();
+      if (s.settings.music) sound.startMusic(); else sound.stopMusic();
+      goBack();
     },
     onDelete: () => {
       if (confirm('Delete this player and all their progress?')) {
@@ -122,28 +171,39 @@ function showEditProfile() {
     },
   });
   ui.showScreen('screen-setup');
-  refreshChip();
+  updateHeader();
 }
 
 function afterProfileChosen() {
   const s = state.getState();
   applyTheme(state.getTheme());
   updateThemeButton(state.getTheme());
-  // Sync background music with this profile's setting.
   if (s.settings.music) sound.startMusic(); else sound.stopMusic();
-  refreshChip();
-  goHome();
+  resetTo('ops');
 }
 
-// ---------- Home ----------
-function goHome() {
+// ---------- Operations picker (v1.1) ----------
+function renderOperationsScreen() {
+  clearTimer();
+  // Reset the per-session operation/difficulty each time we land here.
+  state.updateSettings({ operation: null, difficulty: null, table: null });
+  ui.renderOperations(screens.ops, {
+    onPick: (opKey) => { state.setOperation(opKey); navigate('home'); },
+  });
+  updateHeader();
+  ui.showScreen('screen-ops');
+}
+
+// ---------- Home (Mode) ----------
+function renderHomeScreen() {
   clearTimer();
   const s = state.getState();
   ui.renderHome(screens.home, s, {
-    onDifficulty: (d) => { state.updateSettings({ difficulty: d }); goHome(); },
+    onBackToOps: goBack,
+    onDifficulty: (d) => { state.updateSettings({ difficulty: d }); renderHomeScreen(); },
     onPickTable: () => {
       ui.renderTableDialog(state.getState().settings.table, {
-        onChoose: (n) => { state.updateSettings({ difficulty: 'table', table: n }); goHome(); },
+        onChoose: (n) => { state.updateSettings({ difficulty: 'table', table: n }); renderHomeScreen(); },
         onCancel: () => {},
       });
     },
@@ -151,27 +211,26 @@ function goHome() {
     onSound: (v) => { state.updateSettings({ sound: v }); if (v) sound.unlock(); },
     onMusic: (v) => { state.updateSettings({ music: v }); v ? sound.startMusic() : sound.stopMusic(); },
     onPlay: startRound,
-    onMastery: showMastery,
-    onRewards: showRewards,
-    onHelp: () => ui.showScreen('screen-help'),
   });
-  refreshChip();
+  updateHeader();
   ui.showScreen('screen-home');
 }
 
 // ---------- Play ----------
 function currentMode() {
   const s = state.getState();
-  const mode = { difficulty: s.settings.difficulty, table: s.settings.table };
-  if (mode.difficulty === 'table' && !mode.table) mode.table = 2; // sensible default
+  const op = s.settings.operation || 'mul';
+  const mode = { op, difficulty: s.settings.difficulty, table: s.settings.table };
+  if (op === 'mul' && mode.difficulty === 'table' && !mode.table) mode.table = 2; // sensible default
   return mode;
 }
 
 function startRound() {
   const st = state.getState();
+  if (!st.settings.operation) { resetTo('ops'); return; }
   if (!st.settings.difficulty) {
     const msg = document.getElementById('homeMsg');
-    if (msg) msg.textContent = 'Pick Easy, Medium, Hard or a table first!';
+    if (msg) msg.textContent = 'Pick a level first!';
     return;
   }
   if (st.settings.sound) sound.unlock();
@@ -205,12 +264,12 @@ function clearTimer() {
 
 function onTimeout() {
   clearTimer();
-  if (!round || round.answered) return;
+  if (!round || round.isAnswered) return;
   finishQuestion(game.timeout(round));
 }
 
 function answerQuestion(value) {
-  if (!round || round.answered) return;
+  if (!round || round.isAnswered) return;
   clearTimer();
   finishQuestion(game.answer(round, value));
 }
@@ -229,37 +288,44 @@ function finishQuestion(result) {
 function endRound() {
   clearTimer();
   const s = state.getState();
-  const prevBest = s.bests[round.mode.difficulty] ?? 0;
   const summary = rewards.finishRound({
     mode: round.mode,
     score: round.score,
     bestInRoundStreak: round.bestInRoundStreak,
+    answered: round.answered,
+    correct: round.correct,
   });
-  const newBest = round.score > prevBest && round.score > 0;
   if (s.settings.sound && (summary.stars >= 2 || summary.newBadges.length)) sound.reward();
   ui.renderResults(screens.results, {
     score: round.score,
     stars: summary.stars,
     newBadges: summary.newBadges,
-    newBest,
+    newBest: summary.newBest,
     dailyStreak: summary.dailyStreak,
-  }, { onAgain: startRound, onHome: goHome });
+  }, { onAgain: startRound, onHome: () => resetTo('home') });
   ui.showScreen('screen-results');
 }
 
-// ---------- Other screens ----------
-function showMastery() {
-  ui.renderMastery(screens.mastery, { onHome: goHome });
+// ---------- Progress / Rewards / Help (history routes) ----------
+function renderProgressScreen() {
+  const opKey = state.currentOp();
+  ui.renderProgress(screens.mastery, opKey, state.getOpProgress(opKey), { onHome: goBack });
   ui.showScreen('screen-mastery');
+  updateHeader();
 }
-function showRewards() {
-  ui.renderRewards(screens.rewards, state.getState(), { onHome: goHome });
+function renderRewardsScreen() {
+  ui.renderRewards(screens.rewards, state.getState(), { onHome: goBack });
   ui.showScreen('screen-rewards');
+  updateHeader();
+}
+function renderHelpScreen() {
+  ui.showScreen('screen-help');
+  updateHeader();
 }
 
 // ---------- Keyboard answering (1-4) ----------
 document.addEventListener('keydown', (e) => {
-  if (!screens.play.classList.contains('is-active') || !round || round.answered) return;
+  if (!screens.play.classList.contains('is-active') || !round || round.isAnswered) return;
   const n = Number(e.key);
   if (n >= 1 && n <= 4) {
     const btns = screens.play.querySelectorAll('.option');
@@ -269,10 +335,11 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------- Bridge for markup-created buttons ----------
-window.MathFun = { answer: answerQuestion, goHome };
+// Play screen back = deliberate quit to the Mode screen (round abandoned), not a history pop.
+window.MathFun = { answer: answerQuestion, goHome: () => { round = null; navigate('home', { replace: true }); } };
 
-// Robust theme toggle via event delegation - fires even if the direct binding is missed,
-// and survives any header re-render. Guarded so it can't double-bind.
+// Robust theme toggle via event delegation - fires even if a direct binding is missed,
+// and survives any header re-render.
 document.addEventListener('click', (e) => {
   const el = e.target instanceof Element ? e.target.closest('#themeToggle') : null;
   if (el) { e.preventDefault(); cycleTheme(); }
@@ -282,9 +349,9 @@ document.addEventListener('click', (e) => {
 function init() {
   applyTheme(state.getTheme());
   updateThemeButton(state.getTheme());
-  // Theme toggle is handled by the delegated document click listener below (single binding).
-  document.getElementById('helpBack')?.addEventListener('click', goHome);
-  // Logo acts as a reload/refresh of the current page.
+  // Theme toggle handled by the delegated document click listener above (single binding).
+  document.getElementById('headerHomeBtn')?.addEventListener('click', () => resetTo('ops'));
+  document.getElementById('helpBack')?.addEventListener('click', goBack);
   document.getElementById('brandHome')?.addEventListener('click', () => location.reload());
   const vEl = document.getElementById('appVersion');
   if (vEl) vEl.textContent = APP_VERSION;
@@ -293,11 +360,7 @@ function init() {
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then((reg) => {
-        // Check for updates on each load, and reload once a new worker takes control
-        // so fixes reach users without manual cache clearing.
-        reg.update?.();
-      }).catch(() => {});
+      navigator.serviceWorker.register('./sw.js').then((reg) => { reg.update?.(); }).catch(() => {});
       let reloaded = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (reloaded) return;

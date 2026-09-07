@@ -55,32 +55,75 @@ export function tick() {
   tone(440, 0.05, 'square', 0, 0.05);
 }
 
-// ---- Background music: a gentle looping arpeggio, synthesized (no files) ----
+// ---- Background music: a bouncy, upbeat loop, synthesized (no files) ----
+// A cheerful 16-step melody with a plucky lead, a soft bass on the beat, and a light
+// off-beat hi-hat tick for groove. Still low-volume so it sits behind the game.
 let musicTimer = null;
 let musicOn = false;
+let musicStep = 0;
 
-// A simple, cheerful pentatonic loop (C major pentatonic) - easy on the ears.
-const MELODY = [523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 880.00, 783.99];
-let melodyStep = 0;
+const STEP_MS = 200; // ~150 bpm feel; one melody note per step
 
-function musicNote() {
+// Lead melody in C major (cheerful, kid-friendly). null = a rest for bounce.
+const LEAD = [
+  523.25, 659.25, 783.99, 659.25,  // C E G E
+  698.46, 587.33, 523.25, null,    // F D C -
+  587.33, 698.46, 880.00, 698.46,  // D F A F
+  783.99, 659.25, 523.25, null,    // G E C -
+];
+// Bass note per beat (every 4 steps): C, F, G, C - a simple happy progression.
+const BASS = [130.81, 174.61, 196.00, 130.81];
+
+function playTone(freq, dur, type, gain, when = 0) {
+  const ac = audio();
+  if (!ac || !freq) return;
+  const t0 = ac.currentTime + when;
+  const osc = ac.createOscillator();
+  const g = ac.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(gain, t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(g).connect(ac.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur + 0.02);
+}
+
+// A short noise-based tick for a light percussive groove.
+function playTick(gain, when = 0) {
+  const ac = audio();
+  if (!ac) return;
+  const t0 = ac.currentTime + when;
+  const dur = 0.03;
+  const buf = ac.createBuffer(1, Math.floor(ac.sampleRate * dur), ac.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+  const src = ac.createBufferSource();
+  const g = ac.createGain();
+  const hp = ac.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 6000;
+  g.gain.value = gain;
+  src.buffer = buf;
+  src.connect(hp).connect(g).connect(ac.destination);
+  src.start(t0);
+  src.stop(t0 + dur);
+}
+
+function musicTickStep() {
   if (!musicOn) return;
   const ac = audio();
   if (!ac) return;
-  const freq = MELODY[melodyStep % MELODY.length];
-  melodyStep++;
-  const t0 = ac.currentTime;
-  const osc = ac.createOscillator();
-  const g = ac.createGain();
-  osc.type = 'triangle';
-  osc.frequency.value = freq;
-  // low volume so it sits behind the game
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(0.035, t0 + 0.05);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.42);
-  osc.connect(g).connect(ac.destination);
-  osc.start(t0);
-  osc.stop(t0 + 0.45);
+  const i = musicStep % LEAD.length;
+
+  // Lead (plucky triangle).
+  playTone(LEAD[i], 0.18, 'triangle', 0.045);
+  // Bass on each beat (every 4 steps).
+  if (i % 4 === 0) playTone(BASS[(i / 4) % BASS.length], 0.34, 'sine', 0.05);
+  // Light hi-hat on the off-beats for groove.
+  if (i % 2 === 1) playTick(0.015);
+
+  musicStep++;
 }
 
 export function startMusic() {
@@ -88,9 +131,9 @@ export function startMusic() {
   unlock();
   if (!audio()) return;
   musicOn = true;
-  melodyStep = 0;
-  musicNote();
-  musicTimer = setInterval(musicNote, 480); // ~125 bpm, one note per beat
+  musicStep = 0;
+  musicTickStep();
+  musicTimer = setInterval(musicTickStep, STEP_MS);
 }
 
 export function stopMusic() {

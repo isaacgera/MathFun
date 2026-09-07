@@ -1,6 +1,8 @@
 // rewards.js - stars, streaks and badges (SPEC R5, sec 6).
+// v1.1: bests are per-operation (state.recordBest); longestStreak, daily streak and
+// badges stay profile-level (shared across operations).
 
-import { getState, save } from './state.js';
+import { getState, save, recordBest, recordOpRound } from './state.js';
 import { tableMastered } from './mastery.js';
 
 // Stars from a round score out of 10 (confirmed: 3=10, 2=8-9, 1=6-7, else 0).
@@ -45,33 +47,41 @@ function bumpDailyStreak() {
 }
 
 // Called at end of round. Returns a summary of what was earned this round.
-// round = { mode, score, bestInRoundStreak }
+// round = { mode, score, bestInRoundStreak, answered, correct }
+// mode = { op, difficulty, table }
 export function finishRound(round) {
   const s = getState();
   const stars = starsFor(round.score);
-  const modeKey = round.mode.difficulty; // easy|medium|hard|table
+  const opKey = round.mode.op || 'mul';
+  const levelKey = round.mode.difficulty; // easy|medium|hard|superhard|table
   const newBadges = [];
 
-  // Personal best per mode (by score).
-  if (round.score > (s.bests[modeKey] ?? 0)) s.bests[modeKey] = round.score;
-  if (round.bestInRoundStreak > (s.bests.longestStreak ?? 0)) {
-    s.bests.longestStreak = round.bestInRoundStreak;
+  // Personal best per (operation, level).
+  const newBest = round.score > 0 && recordBest(opKey, levelKey, round.score);
+
+  // Longest in-round streak (profile-level, across all operations).
+  if (round.bestInRoundStreak > (s.longestStreak ?? 0)) {
+    s.longestStreak = round.bestInRoundStreak;
+    save();
   }
-  save();
+
+  // Accuracy stats for non-multiplication operations (add/sub/div).
+  if (opKey !== 'mul') {
+    recordOpRound(opKey, { answered: round.answered ?? 0, correct: round.correct ?? 0 });
+  }
 
   const days = bumpDailyStreak();
 
   if (round.score >= 10 && award('first_perfect')) newBadges.push('first_perfect');
-  if (modeKey === 'hard' && round.score >= 10 && award('hard_hero')) newBadges.push('hard_hero');
+  if (levelKey === 'hard' && round.score >= 10 && award('hard_hero')) newBadges.push('hard_hero');
   if (days >= 5 && award('streak_5_days')) newBadges.push('streak_5_days');
 
-  // Table mastery badge - check the table just practised (or all in level modes is heavy;
-  // keep it to pick-a-table mode where it's meaningful).
-  if (modeKey === 'table' && round.mode.table && tableMastered(round.mode.table)) {
+  // Table mastery badge - multiplication pick-a-table mode only.
+  if (opKey === 'mul' && levelKey === 'table' && round.mode.table && tableMastered(round.mode.table)) {
     if (award('mastered_table')) newBadges.push('mastered_table');
   }
 
-  return { stars, newBadges, dailyStreak: days };
+  return { stars, newBadges, dailyStreak: days, newBest };
 }
 
 export function earnedBadges() {

@@ -2,15 +2,20 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Built & deployed (v1.0.6) - https://isaacgera.github.io/MathFun/
+- **Status:** Shipped v1.1.0 (Addition, Subtraction & Multiplication; Division "coming soon") - https://isaacgera.github.io/MathFun/
 - **Audience:** School-going children aged 5-15 (fun-first, not a dry drill).
 
 ## Summary
-MathFun is a playful, local-first times-tables game. A child picks how hard they want
-to play, answers multiplication questions by tapping one of four choices, and earns
-stars, streaks and badges as they go. A mastery grid shows which tables are solid and
-which need more work. v1 covers **multiplication only (1x-20x)**; the name is kept broad
-so addition/subtraction/division can be added later without a rebrand.
+MathFun is a playful, local-first maths game. A child picks an **operation**, chooses how
+hard they want to play, answers questions by tapping one of four choices, and earns stars,
+streaks and badges as they go. A mastery grid shows which multiplication tables are solid
+and which need more work.
+
+- **v1.0.x (shipped):** multiplication only (1x-20x).
+- **v1.1 (in progress):** an **operation picker landing page** (Addition / Subtraction /
+  Multiplication / Division) and **full Addition & Subtraction** modes with their own
+  difficulty ranges and per-operation progress. **Division** is present as a "coming soon"
+  tile, to be built next (multiplication-style ranges).
 
 ## Build-standards flags (agreed at kickoff)
 - **Rigour:** Simple tier - tidy modular vanilla code, design tokens, accessibility built in; no heavy CI/automated tests.
@@ -26,9 +31,14 @@ encouraging, personalised feedback; rewards (stars, streaks, badges); personal-b
 mastery grid (1x-20x); light/dark theme; sound effects + background music (both optional);
 installable offline PWA.
 
-**Out of scope (v1, noted for later):** other operations (+ - x div), typed/number-pad input,
-cloud sync, leaderboards, progress export/import. (A separate "Maths Quiz Builder" idea exists
-in the Medium backlog - keep MathFun's multi-operation growth aligned with that when the time comes.)
+**Added in v1.1 (in progress, prototype):** operation picker (＋ － ✕ ÷); full Addition &
+Subtraction with number-size difficulty levels (Easy/Medium/Hard/Super Hard) and per-operation
+progress. Division stubbed ("coming soon").
+
+**Out of scope (still, noted for later):** typed/number-pad input, cloud sync, leaderboards,
+progress export/import; fully playable Division (planned right after +/-). (A separate "Maths
+Quiz Builder" idea exists in the Medium backlog - keep MathFun's multi-operation growth aligned
+with that when the time comes.)
 
 ---
 
@@ -45,9 +55,9 @@ in the Medium backlog - keep MathFun's multi-operation growth aligned with that 
 
 ### R1 - Choose how to play (difficulty & table selection)
 **As a child (or parent setting it up), I want to pick what to practise so the game matches my level.**
-- R1.1 A home/start screen offers three difficulty levels: **Easy** (tables 1-5), **Medium** (tables 1-10), **Hard** (tables 1-20).
-- R1.2 A **"Pick a table"** mode lets the child practise one specific table (e.g. just the 7x), selectable from 1 to 20.
-- R1.3 The selected mode is shown clearly before and during a round.
+- R1.1 For **multiplication**, the Mode screen offers three difficulty levels: **Easy** (tables 1-5), **Medium** (tables 1-10), **Hard** (tables 1-20). (Addition/Subtraction difficulty is defined in R11.)
+- R1.2 A **"Pick a table"** mode lets the child practise one specific table (e.g. just the 7x), selectable from 1 to 20. (Multiplication only.)
+- R1.3 The selected operation and mode are shown clearly before and during a round.
 - R1.4 The mode is a per-session choice: nothing is pre-selected on load, reload or player switch - the child picks each time (Play prompts if none chosen). Pick-a-table opens a 1-20 dialog.
 - R1.5 Selection controls are large, clearly labelled, and usable by touch and keyboard.
 
@@ -123,6 +133,21 @@ in the Medium backlog - keep MathFun's multi-operation growth aligned with that 
 - R10.3 Consistent, quick transitions (~120-200ms ease-out) for hover/focus/state changes; clear hover & focus states on interactive elements.
 - R10.4 Playful, child-friendly visual identity: friendly typography, rounded shapes, consistent iconography, tasteful (not overwhelming) animation.
 - R10.5 Sensible empty/loading/celebration states that match the theme.
+
+### R11 - Operations & operation picker (v1.1)
+**As a child, I want to choose which kind of sums to practise so I can work on addition, subtraction, multiplication or division.**
+- R11.1 After a profile is created/selected, the landing screen is an **operation picker** with four large tiles: **Addition ＋, Subtraction －, Multiplication ✕, Division ÷**.
+- R11.2 Choosing an operation opens that operation's **Mode screen** (difficulty + Play). A clear **back** control returns to the operation picker so a child can switch operations freely.
+- R11.3 **Multiplication** keeps its existing behaviour: Easy (1-5), Medium (1-10), Hard (1-20), plus **Pick a table** (1-20).
+- R11.4 **Addition & Subtraction** each offer four difficulty levels by **number size**:
+  **Easy** = single-digit numbers (up to 10), **Medium** = two-digit (up to 100),
+  **Hard** = three-digit (up to 1000), **Super Hard** = four-digit (up to 10000).
+- R11.5 **Subtraction never produces a negative answer** - the larger number is always minuend (bigger - smaller), so results are >= 0.
+- R11.6 **Division** appears as a tile clearly marked **"Coming soon"** and is not yet playable in v1.1 (planned next, with multiplication-style ranges).
+- R11.7 For +/- , the three wrong options are **believable near-misses** (e.g. +/-1, +/-10, a single-digit slip, a carry/borrow mistake), never random, never duplicated or equal to the correct answer (extends R2.3).
+- R11.8 **Progress is tracked per operation:** best scores and mastery/stats are separate for each operation. Existing multiplication progress is migrated without loss (see R7.4).
+- R11.9 The **mastery grid (A x B)** applies to multiplication. Addition & subtraction show a simpler per-operation **progress summary** (e.g. rounds played, best score per level, recent accuracy) rather than a grid.
+- R11.10 The four-option multiple-choice model, 10-question rounds, optional Timer, personalised feedback, stars/streaks/badges, sound/music and accessibility rules (R2-R5, R9, R10) all apply equally to every playable operation.
 
 ---
 

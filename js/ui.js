@@ -5,26 +5,20 @@ import { ROUND_SIZE } from './game.js';
 import { BADGES } from './rewards.js';
 import { gridData } from './mastery.js';
 import { AVATARS } from './avatars.js';
+import { OPERATIONS, OP_ORDER, getOperation, LEVEL_LABELS, LEVEL_EMOJI, levelTitle } from './operations.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// Difficulty labels for display.
-// Short names shown on the cards; full labels used for tooltips/aria only.
-export const MODE_LABELS = { easy: 'Easy', medium: 'Medium', hard: 'Hard', table: 'Table practice' };
-export const MODE_TITLES = {
-  easy: 'Easy - tables 1 to 5',
-  medium: 'Medium - tables 1 to 10',
-  hard: 'Hard - tables 1 to 20',
-  table: 'Practise one times table',
-};
-// Hard covers the full 1x1..20x20 range; Easy/Medium cap lower for younger players.
-
+// Label for the mode tag shown before/during a round (SPEC R1.3), operation-aware.
 export function modeLabel(mode) {
-  if (mode.difficulty === 'table') return `The ${mode.table}\u00D7 table`;
-  return MODE_LABELS[mode.difficulty];
+  const op = getOperation(mode.op);
+  if (mode.op === 'mul' && mode.difficulty === 'table') {
+    return `${op.symbol} ${mode.table}\u00D7 table`;
+  }
+  return `${op.symbol} ${LEVEL_LABELS[mode.difficulty] || ''}`.trim();
 }
 
 // Show one screen by id, hide the rest, move focus to its heading for a11y.
@@ -50,25 +44,70 @@ function toggleSwitch(id, label, icon, on, title) {
     </div>`;
 }
 
-// ---- Home ----
-export function renderHome(container, state, handlers) {
-  const s = state.settings;
-  const tableChosen = s.difficulty === 'table' && s.table;
+// ---- Operations picker (v1.1) ----
+// Four tiles: Addition / Subtraction / Multiplication / Division. Division is "coming soon".
+export function renderOperations(container, handlers) {
+  const tiles = OP_ORDER.map((key) => {
+    const op = OPERATIONS[key];
+    const soon = !op.playable;
+    return `
+      <button class="op-card op-${key} ${soon ? 'coming-soon' : ''}" data-op="${key}"
+        ${soon ? 'aria-disabled="true"' : ''}
+        title="${soon ? op.name + ' - coming soon' : 'Practise ' + op.name.toLowerCase()}">
+        <span class="op-symbol" aria-hidden="true">${op.emoji}</span>
+        <span class="op-name">${op.name}</span>
+        ${soon ? '<span class="op-soon">Coming soon</span>' : ''}
+      </button>`;
+  }).join('');
 
   container.innerHTML = `
-    <h2 tabindex="-1">Mode</h2>
-    <div class="mode-grid" role="group" aria-label="Difficulty">
-      ${['easy', 'medium', 'hard'].map((d) => `
-        <button class="mode-card ${s.difficulty === d ? 'selected' : ''}" data-diff="${d}"
-          aria-pressed="${s.difficulty === d}" title="${MODE_TITLES[d]}">
-          <span class="mode-emoji" aria-hidden="true">${d === 'easy' ? '\uD83D\uDE0A' : d === 'medium' ? '\uD83D\uDE80' : '\uD83E\uDD16'}</span>
-          <span class="mode-name">${MODE_LABELS[d]}</span>
-        </button>`).join('')}
-      <button class="mode-card ${s.difficulty === 'table' ? 'selected' : ''}" data-diff="table"
-        aria-pressed="${s.difficulty === 'table'}" title="Practise one times table">
-        <span class="mode-emoji" aria-hidden="true">\uD83C\uDFAF</span>
-        <span class="mode-name">${tableChosen ? `${s.table}\u00D7 table` : 'Pick a table'}</span>
-      </button>
+    <h2 tabindex="-1">Choose what to practise</h2>
+    <p class="ops-hint muted">Pick a kind of sum to play.</p>
+    <div class="op-grid" role="group" aria-label="Choose an operation">
+      ${tiles}
+    </div>
+  `;
+
+  container.querySelectorAll('.op-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.op;
+      if (!OPERATIONS[key].playable) return; // coming soon - do nothing
+      handlers.onPick(key);
+    });
+  });
+}
+
+// ---- Home ("Mode") ---- operation-aware (SPEC R11.2, R11.3)
+export function renderHome(container, state, handlers) {
+  const s = state.settings;
+  const op = getOperation(s.operation);
+  const levels = op.levels; // e.g. ['easy','medium','hard','table'] or [...'superhard']
+  const tableChosen = op.hasTable && s.difficulty === 'table' && s.table;
+
+  const levelCards = levels.map((d) => {
+    if (d === 'table') {
+      return `
+        <button class="mode-card ${s.difficulty === 'table' ? 'selected' : ''}" data-diff="table"
+          aria-pressed="${s.difficulty === 'table'}" title="Practise one times table">
+          <span class="mode-emoji" aria-hidden="true">${LEVEL_EMOJI.table}</span>
+          <span class="mode-name">${tableChosen ? `${s.table}\u00D7 table` : 'Pick a table'}</span>
+        </button>`;
+    }
+    return `
+      <button class="mode-card ${s.difficulty === d ? 'selected' : ''}" data-diff="${d}"
+        aria-pressed="${s.difficulty === d}" title="${levelTitle(op.key, d)}">
+        <span class="mode-emoji" aria-hidden="true">${LEVEL_EMOJI[d] || '\u2B50'}</span>
+        <span class="mode-name">${LEVEL_LABELS[d]}</span>
+      </button>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="play-top">
+      <button class="btn btn-ghost btn-back" id="opBack" aria-label="Back to choose operation" title="Choose a different operation">\u2190</button>
+      <h2 tabindex="-1">${op.symbol} ${op.name}</h2>
+    </div>
+    <div class="mode-grid mode-grid-${levels.length}" role="group" aria-label="Difficulty">
+      ${levelCards}
     </div>
 
     <button class="btn btn-play" id="playBtn" title="Start a round of 10 questions">\u25B6\uFE0F Play</button>
@@ -82,6 +121,8 @@ export function renderHome(container, state, handlers) {
 
     <p class="home-hint muted">Find your progress, rewards and help in the menu at the top right.</p>
   `;
+
+  $('#opBack', container).addEventListener('click', handlers.onBackToOps);
 
   container.querySelectorAll('.mode-card').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -262,7 +303,43 @@ export function renderResults(container, data, handlers) {
   $('#homeBtn', container).addEventListener('click', handlers.onHome);
 }
 
-// ---- Mastery grid ----
+// ---- Progress (operation-aware) ----
+// Multiplication -> the A x B mastery grid. Addition/Subtraction/Division -> a summary
+// of rounds played, best score per level, and accuracy (SPEC R11.9).
+export function renderProgress(container, opKey, opProgress, handlers) {
+  const op = getOperation(opKey);
+  if (op.usesGrid) { renderMastery(container, handlers); return; }
+
+  const bests = opProgress.bests || {};
+  const rounds = opProgress.rounds || 0;
+  const answered = opProgress.answered || 0;
+  const correct = opProgress.correct || 0;
+  const acc = answered ? Math.round((correct / answered) * 100) : 0;
+
+  const bestItems = op.levels.map((lvl) => `
+    <div class="best-item"><span class="best-num">${bests[lvl] ?? 0}</span>${LEVEL_LABELS[lvl]} best</div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="play-top">
+      <button class="btn btn-ghost btn-back" id="mBack" aria-label="Back to home" title="Back to home">\u2190</button>
+      <h2 tabindex="-1">${op.symbol} ${op.name} progress</h2>
+    </div>
+    <div class="op-summary">
+      <div class="summary-stats">
+        <div class="stat"><span class="stat-num">${rounds}</span><span class="stat-lbl">Rounds played</span></div>
+        <div class="stat"><span class="stat-num">${acc}%</span><span class="stat-lbl">Accuracy</span></div>
+        <div class="stat"><span class="stat-num">${answered}</span><span class="stat-lbl">Questions answered</span></div>
+      </div>
+      <h3 class="summary-sub">Best score per level</h3>
+      <div class="bests">${bestItems}</div>
+      <p class="grid-hint muted">Keep practising to raise your best score and accuracy!</p>
+    </div>
+  `;
+  $('#mBack', container).addEventListener('click', handlers.onHome);
+}
+
+// ---- Mastery grid (multiplication) ----
 export function renderMastery(container, handlers) {
   const rows = gridData(20);
   const legend = `
@@ -298,7 +375,7 @@ export function renderMastery(container, handlers) {
   $('#mBack', container).addEventListener('click', handlers.onHome);
 }
 
-// ---- Rewards ----
+// ---- Rewards ---- badges are profile-level; bests shown across operations (v1.1).
 export function renderRewards(container, state, handlers) {
   const earned = new Set(state.badges);
   const chips = Object.entries(BADGES).map(([id, b]) => `
@@ -307,17 +384,24 @@ export function renderRewards(container, state, handlers) {
       <div class="badge-name">${b.name}</div>
       <div class="badge-desc">${b.desc}</div>
     </div>`).join('');
-  const b = state.bests;
+
+  // Best score across all levels for each operation (whichever level is highest).
+  const opBestRows = OP_ORDER.filter((k) => OPERATIONS[k].playable).map((k) => {
+    const op = OPERATIONS[k];
+    const bests = (state.ops && state.ops[k] && state.ops[k].bests) || {};
+    const best = Math.max(0, ...Object.values(bests));
+    return `<div class="best-item"><span class="best-num">${best}</span>${op.symbol} best</div>`;
+  }).join('');
+  const longest = state.longestStreak ?? 0;
+
   container.innerHTML = `
     <div class="play-top">
       <button class="btn btn-ghost btn-back" id="rBack" aria-label="Back to home">\u2190</button>
       <h2 tabindex="-1">Rewards</h2>
     </div>
     <div class="bests">
-      <div class="best-item"><span class="best-num">${b.easy}</span>Easy best</div>
-      <div class="best-item"><span class="best-num">${b.medium}</span>Medium best</div>
-      <div class="best-item"><span class="best-num">${b.hard}</span>Hard best</div>
-      <div class="best-item"><span class="best-num">${b.longestStreak}</span>Longest streak</div>
+      ${opBestRows}
+      <div class="best-item"><span class="best-num">${longest}</span>Longest streak</div>
     </div>
     <div class="badge-grid">${chips}</div>
   `;
@@ -400,7 +484,11 @@ export function renderSetup(container, { canCancel = false }, handlers) {
     if (steps[step] === 'name') {
       const input = $('#nameInput', container);
       input.focus();
-      input.addEventListener('input', () => { draft.name = input.value; });
+      input.addEventListener('input', () => {
+        draft.name = input.value;
+        const hint = $('#wizHint', container);
+        if (hint && input.value.trim()) hint.remove();
+      });
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); next(); } });
     } else {
       const map = { gender: ['gender-opt', 'gender', 'gender'], age: ['age-opt', 'age', 'age'], avatar: ['avatar-opt', 'av', 'avatar'] };
@@ -424,6 +512,7 @@ export function renderSetup(container, { canCancel = false }, handlers) {
   }
 
   function needsChoice() {
+    if (steps[step] === 'name' && !(draft.name || '').trim()) return 'Please type your name to carry on.';
     if (steps[step] === 'gender' && !draft.gender) return 'Please pick boy or girl to carry on.';
     if (steps[step] === 'age' && !draft.age) return 'Please tap your age to carry on.';
     if (steps[step] === 'avatar' && !draft.avatar) return 'Please pick a character to finish.';

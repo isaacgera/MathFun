@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#6d5efc">
-  <meta name="description" content="MathFun - a playful times-tables game for kids. Learn multiplication 1x to 20x with fun rewards.">
+  <meta name="description" content="MathFun - a playful maths game for kids. Practise addition, subtraction and multiplication (division coming soon) with fun rewards.">
   <title>MathFun</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
@@ -19,6 +19,7 @@
     </button>
     <div class="header-right">
       <button class="btn btn-ghost theme-toggle" id="themeToggle" aria-label="Switch theme" title="Switch theme">Theme</button>
+      <button class="btn btn-ghost home-btn hidden" id="headerHomeBtn" aria-label="Home - choose an operation" title="Home">&#127968; Home</button>
       <div class="profile-chip hidden" id="profileChip"></div>
     </div>
   </header>
@@ -30,7 +31,10 @@
     <!-- Profile setup (create / edit) -->
     <section class="screen" id="screen-setup" aria-label="Profile setup"></section>
 
-    <!-- Home -->
+    <!-- Operations picker (+ - x div) -->
+    <section class="screen" id="screen-ops" aria-label="Choose an operation"></section>
+
+    <!-- Home (Mode) -->
     <section class="screen" id="screen-home" aria-label="Home"></section>
 
     <!-- Play -->
@@ -52,18 +56,25 @@
         <h2 tabindex="-1">How to play</h2>
       </div>
       <div class="help-body">
-        <p>MathFun helps you practise your times tables. Here's how:</p>
+        <p>MathFun helps you practise your maths. Here's how:</p>
         <ol>
           <li>Set up your player: name, boy or girl, age and a fun character.</li>
-          <li>Pick <strong>Easy</strong>, <strong>Medium</strong>, <strong>Hard</strong>, or tap <strong>Pick a table</strong> for one times table.</li>
+          <li>Choose what to practise: <strong>Addition</strong>, <strong>Subtraction</strong>,
+              <strong>Multiplication</strong> (Division is coming soon!).</li>
+          <li>Pick how hard: <strong>Easy</strong>, <strong>Medium</strong>, <strong>Hard</strong> or
+              <strong>Super Hard</strong> (times tables also has <strong>Pick a table</strong>).</li>
           <li>Tap <strong>Play</strong>. You'll get 10 questions.</li>
           <li>Tap the answer you think is right (or press keys <strong>1-4</strong>).</li>
           <li>Earn <strong>stars</strong>, build <strong>streaks</strong>, and collect <strong>badges</strong>!</li>
         </ol>
-        <p>Turn on <strong>Timer</strong> for a timed challenge, or leave it off for no rush.
-           <strong>Sound</strong> plays happy effects and <strong>Music</strong> plays a gentle tune.
-           Open the menu at the top right for your <strong>Profile</strong>, <strong>Rewards</strong>,
-           <strong>Progress</strong> and to <strong>switch player</strong>.</p>
+        <p>Use the <strong>&larr;</strong> arrow to go back a screen, or <strong>&#127968; Home</strong>
+           (top right) to jump to the operation picker. Turn on <strong>Timer</strong> for a timed
+           challenge, or leave it off for no rush. <strong>Sound</strong> plays happy effects and
+           <strong>Music</strong> plays an upbeat tune. Open the menu at the top right for your
+           <strong>Profile</strong>, <strong>Rewards</strong>, <strong>Progress</strong> and to
+           <strong>switch player</strong>.</p>
+        <p class="muted">Number sizes for + and -: Easy = single digit (to 10), Medium = two digits
+           (to 100), Hard = three digits (to 1000), Super Hard = four digits (to 10000).</p>
         <p class="muted">All your progress stays on this device. Nothing is sent anywhere.</p>
         <p class="muted">MathFun v<span id="appVersion"></span> &middot; MIT licence.</p>
       </div>
