@@ -98,6 +98,10 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.2.1 - 09 Sep 2026
+- Mobile polish: the landing (operation picker) sits lower toward the centre on phones; the
+  header logo blends with the background and the "MathFun" wordmark stays visible on mobile.
+
 ### v1.2.0 - 09 Sep 2026
 - **Division!** Whole-number division built as the inverse of the tables (answers always
   exact), with Easy/Medium/Hard levels and a **Pick a number** dialog (divide by a chosen 1-20).

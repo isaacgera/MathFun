@@ -713,3 +713,15 @@ As always, the Windows/Kiro shell can't run a browser here - needs Isaac's deplo
    - Optional: Lighthouse PWA/installability still green; installs and runs offline.
 
 **Status: v1.2.0 ported, documented and diagnostics-clean; awaiting Isaac's push + hosted verify.**
+
+## v1.2.0 verified on mobile + v1.2.1 mobile polish - 09 Sep 2026
+Isaac pushed v1.2.0 (commit e684f72) and verified it on mobile - all good. Two small mobile
+visual tweaks followed, done straight-to-main (CSS-only, low risk) and shipped as **v1.2.1**:
+- **Landing sits lower on mobile:** `#screen-ops` / `#screen-who` get `padding-top: 8vh` at
+  <=560px so the short picker screens sit toward the vertical centre instead of hugging the top.
+- **Header logo blends + wordmark on mobile:** `.brand-mark` background made transparent (the
+  SVG app icon no longer sits in a mismatched gradient box); the mobile media query no longer
+  hides `.brand-name`, so "MathFun" shows on phones. Theme/Home stay icon-only and the chip
+  tightens so the header still fits on one line.
+- Version: `APP_VERSION` + `sw.js` cache -> **1.2.1**; README changelog + userguide footer updated.
+- Isaac verified the tweaks on Live Server before the bump. Diagnostics clean.

@@ -14,7 +14,7 @@ import * as ui from './ui.js';
 import { getOperation, OPERATIONS, hintFor } from './operations.js';
 import * as funfacts from './funfacts.js';
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 
 const screens = {
   who: document.getElementById('screen-who'),

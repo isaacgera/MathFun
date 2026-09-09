@@ -76,12 +76,14 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px var(--space);
 }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 1.3rem; }
+.brand {
+  display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 1.3rem;
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+/* The mark is the actual app icon (SVG) - no gradient box behind it, so it blends with the page. */
 .brand-mark {
-  display: grid; place-items: center;
-  width: 34px; height: 34px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--brand), var(--brand-2));
-  color: #fff; font-weight: 900;
+  display: block; width: 34px; height: 34px; border-radius: 10px;
+  background: transparent;
 }
 .brand-name { background: linear-gradient(135deg, var(--brand), var(--brand-2));
   -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -359,16 +361,26 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .header-right .btn-ghost .hdr-txt { margin-left: 6px; }
 .home-btn.hidden { display: none; }
 
-/* Mobile: single line, icon-only Theme/Home, tighter chip - avoids the header wrapping. */
+/* Mobile: keep the logo + "MathFun" name visible; Theme/Home go icon-only and the chip
+   tightens so the whole header still fits on one line. */
 @media (max-width: 560px) {
   .app-header { padding: 10px 12px; gap: 8px; }
-  .brand-name { display: none; } /* keep the logo mark; drop the wordmark to save width */
-  .header-right { gap: 6px; }
-  .header-right .btn-ghost { padding: 0; width: 44px; min-width: 44px; }
+  .brand { font-size: 1.1rem; flex: none; }
+  .brand-name { display: inline; } /* keep the wordmark visible on mobile */
+  .header-right { gap: 6px; min-width: 0; }
+  .header-right .btn-ghost { padding: 0; width: 40px; min-width: 40px; }
   .header-right .btn-ghost .hdr-txt { display: none; } /* icon-only Theme + Home */
   .header-right .btn-ghost .hdr-ico { font-size: 1.2rem; margin: 0; }
-  .chip-name { max-width: 5ch; }
-  .chip-btn { padding: 4px 8px 4px 5px; }
+  .chip-name { max-width: 4ch; }
+  .chip-btn { padding: 4px 6px 4px 5px; }
+  .chip-av { font-size: 1.1rem; }
+
+  /* The operation picker + "Who's playing?" are short screens - on a tall phone they sit
+     high up. Nudge them down toward the vertical centre for a more balanced look. */
+  #screen-ops.is-active,
+  #screen-who.is-active {
+    padding-top: 8vh;
+  }
 }
 .profile-chip { position: relative; }
 .profile-chip.hidden { display: none; }
