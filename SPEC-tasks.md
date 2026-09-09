@@ -1,6 +1,6 @@
 ﻿# MathFun - Tasks
 
-- **Tier:** Simple | **Status:** Shipped v1.1.0 (Addition, Subtraction & Multiplication; Division "coming soon") | **Workflow:** prototype-first.
+- **Tier:** Simple | **Status:** Shipped v1.2.0 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge) | **Workflow:** prototype-first.
 - **Live:** https://isaacgera.github.io/MathFun/
 - Shipping app at `Learning/MathFun/` root; the sandbox it was built in is kept at `Learning/MathFun/prototypes/` (git-ignored, not published).
 
@@ -74,8 +74,36 @@ Built prototype-first in `prototypes/` (`1.1.0-proto`), verified by Isaac, then 
 - [x] Prototype Help copy updated for operations + new levels
 - [x] Isaac verified via Live Server (operations, +/- ranges, subtraction non-negative, migration, nav, emoji tiles, music, empty-name fix)
 - [x] Port to shipped app: `APP_VERSION` 1.1.0, cache `mathfun-v1.1.0`, storage `mathfun_` (schema-3 migration); preserved app-level theme; README changelog + userguide + SPEC status; manifest name/description; Ideas.md -> Built (MathFun v1.1.0)
-- [ ] Deploy (Isaac pushes via GitHub Desktop) + verify hosted PWA (migration, Lighthouse, install)
-- [ ] (Then) Division built fully - multiplication-style ranges
+- [x] Deploy (Isaac pushed via GitHub Desktop) + verified on the hosted site - v1.1.0 live
+
+## Phase 8 - v1.2: Division, Fun Facts, Daily Challenge + polish (PORTED, awaiting deploy)
+Built prototype-first in `prototypes/` (`1.2.0-proto`) over several feedback rounds, verified by
+Isaac on Live Server, then ported to the app root as **v1.2.0**.
+- [x] **Division** built fully in `operations.js` - whole-number division as the inverse of the
+      tables (answers always exact); Easy/Medium/Hard (factor caps 5/10/20) + **Pick a number**
+      (divide by a chosen 1-20); believable near-miss distractors; `div.playable = true`
+- [x] **Fun Facts** - new `funfacts.js` with 100 local, offline facts; `#screen-funfacts` + a
+      Fun Facts tile; "Another fact" with a pop animation (fully local, no network)
+- [x] **Daily Challenge** - `generateChallengeQuestion` (random playable op + level per question);
+      a mixed 10-question round that counts the daily streak but not per-operation bests/mastery
+- [x] **Need a Hint?** - untimed mode only; after 7s an animated hint button reveals a
+      per-operation tip (`hintFor` in `operations.js`)
+- [x] **My Progress reworked** - context-aware: all-operations overview before an operation is
+      picked, that operation's detail once in one; multiplication now shows the same
+      rounds/accuracy summary as the others, with the A x B mastery grid kept below
+- [x] **Per-context music** - `sound.js` holds a distinct tune per operation, Fun Facts and Daily
+      Challenge; `playTune`/`lastTune` in `app.js`; **music on by default** for new players
+- [x] **Sound controls moved** into the player menu (compact icon row: Timer / Sound / Music)
+- [x] **Age selector** - single colourful stepper (default 5, - / + or type), range 0-100
+- [x] **Layout/mobile** - fixed 2x3 option tiles (squarish, capped width); single-line mobile
+      header with icon-only Theme/Home
+- [x] `state.js` - `music:true` default + multiplication `rounds/answered/correct` stats;
+      kept `mathfun_` prefix + app-level theme + schema-3 migration (no data loss)
+- [x] Port to shipped app: `APP_VERSION` 1.2.0, cache `mathfun-v1.2.0`, precache `funfacts.js`;
+      README changelog + userguide + SPEC status; manifest description; Ideas.md -> Built (v1.2.0)
+- [x] All 15 live files pass diagnostics (zero errors)
+- [ ] Isaac: deploy (GitHub Desktop) + verify on the hosted site
+- [ ] (Later) Division fully verified on device; optional fact-flavoured challenge questions
 
 ## Nice-to-have / later
 - [x] Store-quality raster icons (192 / 512 / maskable PNGs) + iOS apple-touch icon (v1.0.7);

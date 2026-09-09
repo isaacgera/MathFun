@@ -52,12 +52,14 @@ function bumpDailyStreak() {
 export function finishRound(round) {
   const s = getState();
   const stars = starsFor(round.score);
+  const isChallenge = round.mode.challenge || round.mode.op === 'challenge';
   const opKey = round.mode.op || 'mul';
   const levelKey = round.mode.difficulty; // easy|medium|hard|superhard|table
   const newBadges = [];
 
-  // Personal best per (operation, level).
-  const newBest = round.score > 0 && recordBest(opKey, levelKey, round.score);
+  // Personal best per (operation, level). The Daily Challenge is a mixed fun round and is
+  // deliberately NOT recorded against any single operation's bests/mastery.
+  const newBest = !isChallenge && round.score > 0 && recordBest(opKey, levelKey, round.score);
 
   // Longest in-round streak (profile-level, across all operations).
   if (round.bestInRoundStreak > (s.longestStreak ?? 0)) {
@@ -65,19 +67,20 @@ export function finishRound(round) {
     save();
   }
 
-  // Accuracy stats for non-multiplication operations (add/sub/div).
-  if (opKey !== 'mul') {
+  // Round/accuracy stats per operation (v1.2: multiplication included so its My Progress
+  // matches the others). Skip only the mixed Daily Challenge.
+  if (!isChallenge) {
     recordOpRound(opKey, { answered: round.answered ?? 0, correct: round.correct ?? 0 });
   }
 
   const days = bumpDailyStreak();
 
   if (round.score >= 10 && award('first_perfect')) newBadges.push('first_perfect');
-  if (levelKey === 'hard' && round.score >= 10 && award('hard_hero')) newBadges.push('hard_hero');
+  if (!isChallenge && levelKey === 'hard' && round.score >= 10 && award('hard_hero')) newBadges.push('hard_hero');
   if (days >= 5 && award('streak_5_days')) newBadges.push('streak_5_days');
 
   // Table mastery badge - multiplication pick-a-table mode only.
-  if (opKey === 'mul' && levelKey === 'table' && round.mode.table && tableMastered(round.mode.table)) {
+  if (!isChallenge && opKey === 'mul' && levelKey === 'table' && round.mode.table && tableMastered(round.mode.table)) {
     if (award('mastered_table')) newBadges.push('mastered_table');
   }
 

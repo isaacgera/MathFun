@@ -6,17 +6,27 @@ Built as an installable, offline-capable PWA.
 
 **Live demo:** https://isaacgera.github.io/MathFun/
 
-> Covers **Addition, Subtraction and Multiplication**. **Division** is on the way
-> (shown as "coming soon"). Multiplication runs 1x1 to 20x20.
+> Covers **Addition, Subtraction, Multiplication and Division**, plus **Fun Facts** and a
+> mixed **Daily Challenge**. Multiplication runs 1x1 to 20x20.
 
 ## Features
-- **Choose an operation** - a landing page with **Addition, Subtraction, Multiplication**
-  and **Division** (coming soon). Switch freely with the back arrow or the header **Home** button.
-- **Multiple players** - each child has their own profile (name, boy/girl, age 5-15,
+- **Choose an option** - a landing page with **Addition, Subtraction, Multiplication** and
+  **Division**, plus **Fun Facts** and a **Daily Challenge**. Switch freely with the back
+  arrow or the header **Home** button.
+- **Division** - whole-number division built as the inverse of the tables, so answers are
+  always exact. Easy / Medium / Hard, plus **Pick a number** (divide by a chosen 1-20).
+- **Fun Facts** - a tab of 100 kid-friendly facts about numbers and sums; tap for another.
+  Fully local, no network.
+- **Daily Challenge** - a surprise 10-question round mixing all operations. Counts your daily
+  streak but keeps your per-operation best scores separate.
+- **Need a Hint?** - in untimed mode, if you pause for a few seconds a friendly hint button
+  appears, offering a per-operation tip (count on, count back, groups of, times-table).
+- **Multiple players** - each child has their own profile (name, boy/girl, age 0-100,
   fun character avatar) with their own **per-operation** progress, bests, badges and mastery.
 - **Difficulty levels**
   - Multiplication: Easy (tables 1-5), Medium (1-10), Hard (1-20), plus a **Pick a table**
     dialog to drill any single table 1x-20x.
+  - Division: Easy (up to 5), Medium (up to 10), Hard (up to 20), plus **Pick a number**.
   - Addition & Subtraction: Easy (single digit, to 10), Medium (two digit, to 100),
     Hard (three digit, to 1000), **Super Hard** (four digit, to 10000). Subtraction never
     produces a negative answer.
@@ -24,9 +34,12 @@ Built as an installable, offline-capable PWA.
 - **10-question rounds** - untimed by default, with an optional **Timer** challenge.
 - **Encouraging, personalised feedback** - praise uses the child's name and boy/girl term.
 - **Rewards** - stars per round, daily streaks, and collectable badges.
-- **My Progress** - multiplication shows a colourful mastery grid (1x-20x); addition and
-  subtraction show a summary (rounds played, best score per level, accuracy).
-- **Sound & Music** - synthesized effects and a gentle background tune (both optional).
+- **My Progress** - opened before choosing an operation it shows an **all-operations overview**;
+  in/after an operation it shows that operation's detail (rounds, accuracy, best per level).
+  Multiplication also shows its colourful A x B mastery grid (1x-20x).
+- **Sound & Music** - synthesized effects, plus a different upbeat background tune for each
+  operation, Fun Facts and the Daily Challenge. Timer / Sound / Music toggles live in the
+  player menu; music is on by default.
 - **Light / dark theme** - follows the device and can be toggled; choice persists.
 - **Accessible & mobile-first** - large tap targets, keyboard answering (keys 1-4),
   visible focus, reduced-motion support, ARIA labels; scales from phone to desktop.
@@ -67,7 +80,8 @@ MathFun/
     app.js              bootstrap, routing, profile flow, wiring
     state.js            localStorage (the only module that touches it); per-operation progress
     questions.js        multiplication fact pools + near-miss distractor generation
-    operations.js       per-operation config (symbols, levels, ranges, question generators)
+    operations.js       per-operation config (symbols, levels, ranges, generators, hints)
+    funfacts.js         local, offline set of 100 fun maths/number facts
     game.js             round lifecycle, scoring, timer
     rewards.js          stars, streaks, badges
     mastery.js          per-fact mastery + grid data
@@ -84,6 +98,25 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.2.0 - 09 Sep 2026
+- **Division!** Whole-number division built as the inverse of the tables (answers always
+  exact), with Easy/Medium/Hard levels and a **Pick a number** dialog (divide by a chosen 1-20).
+- **Fun Facts** - a new tab with 100 kid-friendly, fully-local facts about numbers and sums.
+- **Daily Challenge** - a surprise mixed round drawing from all operations; counts the daily
+  streak without touching per-operation bests.
+- **Need a Hint?** - in untimed mode, a friendly animated hint button appears after a short
+  pause and gives a per-operation tip.
+- **My Progress reworked** - a context-aware screen: an all-operations overview before you pick
+  an operation, and that operation's detail once you're in one. Multiplication now shows the same
+  rounds/accuracy summary as the others, with its mastery grid kept below.
+- **Per-context music** - a different upbeat tune for each operation, Fun Facts and the Daily
+  Challenge. **Music is on by default** for new players. Timer / Sound / Music moved into the
+  player menu (compact icon row).
+- **Age selector** - a single colourful stepper (default 5, - / +, or type), range 0-100.
+- **Layout & mobile polish** - 2x3 option tiles that stay tidy on phone and desktop; the header
+  (theme / home / player) stays on one line on mobile with icon-only buttons.
+- Data migrates with no loss (existing multiplication mastery/bests are preserved).
+
 ### v1.1.0 - 07 Sep 2026
 - **Operations!** New landing page to choose **Addition, Subtraction, Multiplication** or
   Division (division shown as "coming soon"). Addition & Subtraction are fully playable with
@@ -150,6 +183,5 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 MIT - see [LICENSE](./LICENSE).
 
 ## Notes / future ideas
-- **Division** - build it fully (currently "coming soon"), using multiplication-style ranges.
-  (Keep aligned with the separate "Maths Quiz Builder" idea.)
 - Optional export/import of a child's progress.
+- More fun-fact-flavoured challenge questions.

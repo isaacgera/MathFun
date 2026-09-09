@@ -1,22 +1,26 @@
 // app.js - bootstrap, screen routing, profile flow, and wiring (SPEC sec 1, sec 12).
 // Exposes a small window.MathFun bridge so markup-created buttons can call back.
 // v1.1: Operations picker between profile-selection and the Mode screen; a nav history
-// stack so each screen's back arrow returns to the ACTUAL previous screen; and a header
-// Home button that jumps to the Operations picker.
+// stack so each screen's back arrow returns to the ACTUAL previous screen; a header Home
+// button that jumps to the Operations picker.
+// v1.2: Division, Fun Facts (local/offline), Daily Challenge, a "Need a Hint?" helper,
+// per-context background music, and a context-aware My Progress screen.
 
 import * as state from './state.js';
 import * as game from './game.js';
 import * as rewards from './rewards.js';
 import * as sound from './sound.js';
 import * as ui from './ui.js';
-import { getOperation } from './operations.js';
+import { getOperation, OPERATIONS, hintFor } from './operations.js';
+import * as funfacts from './funfacts.js';
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 const screens = {
   who: document.getElementById('screen-who'),
   setup: document.getElementById('screen-setup'),
   ops: document.getElementById('screen-ops'),
+  funfacts: document.getElementById('screen-funfacts'),
   home: document.getElementById('screen-home'),
   play: document.getElementById('screen-play'),
   results: document.getElementById('screen-results'),
@@ -28,6 +32,8 @@ const screens = {
 let round = null;
 let timerId = null;
 let timerStart = 0;
+let hintTimerId = null;             // "Need a Hint?" reveal timer (untimed mode only)
+const HINT_DELAY_MS = 7000;         // show the hint button after 7s of no answer
 
 // ---------- Navigation history ----------
 // Each navigable destination is a named route mapped to its render function. We keep a
@@ -37,6 +43,7 @@ let timerStart = 0;
 const routes = {
   who: () => renderWhoPlaying(),
   ops: () => renderOperationsScreen(),
+  funfacts: () => renderFunFactsScreen(),
   home: () => renderHomeScreen(),
   progress: () => renderProgressScreen(),
   rewards: () => renderRewardsScreen(),
@@ -92,7 +99,13 @@ function updateThemeButton(theme) {
   if (!btn) return;
   const resolved = resolveTheme(theme);
   const switchTo = resolved === 'dark' ? 'light' : 'dark';
-  btn.textContent = resolved === 'dark' ? '\uD83C\uDF19 Dark' : '\u2600\uFE0F Light';
+  // Keep the icon/text span structure so mobile CSS can hide just the text.
+  const ico = resolved === 'dark' ? '\uD83C\uDF19' : '\u2600\uFE0F';
+  const word = resolved === 'dark' ? 'Dark' : 'Light';
+  const icoEl = btn.querySelector('.hdr-ico');
+  const txtEl = btn.querySelector('.hdr-txt');
+  if (icoEl && txtEl) { icoEl.textContent = ico; txtEl.textContent = word; }
+  else btn.textContent = `${ico} ${word}`;
   btn.setAttribute('aria-label', `Switch to ${switchTo} theme`);
   btn.setAttribute('title', `Switch to ${switchTo} theme`);
 }
@@ -102,13 +115,18 @@ function updateHeader() {
   const p = state.activeProfile();
   const homeBtn = document.getElementById('headerHomeBtn');
   if (homeBtn) homeBtn.classList.toggle('hidden', !p); // only when a profile is active
+  const s = state.getState();
   ui.renderProfileChip(p, {
     profile: () => navigate('editProfile'),
     rewards: () => navigate('rewards'),
     progress: () => navigate('progress'),
     help: () => navigate('help'),
     switch: showWhoPlaying,
-  });
+    // Sound & Music controls (v1.2) live in the chip menu now.
+    onTimed: (v) => state.updateSettings({ timed: v }),
+    onSound: (v) => { state.updateSettings({ sound: v }); if (v) sound.unlock(); },
+    onMusic: (v) => { state.updateSettings({ music: v }); v ? sound.startMusic(lastTune) : sound.stopMusic(); },
+  }, s.settings);
 }
 
 // ---------- Profile flow ----------
@@ -160,7 +178,7 @@ function renderEditProfile() {
     onSave: (data) => {
       state.updateProfile(profile.id, data);
       const s = state.getState();
-      if (s.settings.music) sound.startMusic(); else sound.stopMusic();
+      if (s.settings.music) sound.startMusic(lastTune); else sound.stopMusic();
       goBack();
     },
     onDelete: () => {
@@ -175,11 +193,20 @@ function renderEditProfile() {
 }
 
 function afterProfileChosen() {
-  const s = state.getState();
   applyTheme(state.getTheme());
   updateThemeButton(state.getTheme());
-  if (s.settings.music) sound.startMusic(); else sound.stopMusic();
+  playTune('mul'); // land on the home/picker with the default jolly tune (if music is on)
   resetTo('ops');
+}
+
+// ---------- Per-context music (v1.2) ----------
+// Each operation, Fun Facts and the Daily Challenge get their own jolly theme. Only plays
+// when the player has Music on. lastTune is remembered so the Music toggle can resume it.
+let lastTune = 'mul';
+function playTune(tuneKey) {
+  lastTune = tuneKey || lastTune;
+  if (state.getState().settings.music) sound.startMusic(lastTune);
+  else sound.stopMusic();
 }
 
 // ---------- Operations picker (v1.1) ----------
@@ -187,17 +214,40 @@ function renderOperationsScreen() {
   clearTimer();
   // Reset the per-session operation/difficulty each time we land here.
   state.updateSettings({ operation: null, difficulty: null, table: null });
+  playTune('mul'); // neutral home tune on the picker
   ui.renderOperations(screens.ops, {
-    onPick: (opKey) => { state.setOperation(opKey); navigate('home'); },
+    onPick: (opKey) => { state.setOperation(opKey); playTune(opKey); navigate('home'); },
+    onFunFacts: () => navigate('funfacts'),
+    onDailyChallenge: startDailyChallenge,
   });
   updateHeader();
   ui.showScreen('screen-ops');
+}
+
+// ---------- Fun Facts (v1.2, local/offline) ----------
+let lastFactText = null;
+function renderFunFactsScreen() {
+  clearTimer();
+  playTune('facts'); // twinkly Fun Facts theme
+  const fact = funfacts.randomFact();
+  lastFactText = fact.text;
+  ui.renderFunFacts(screens.funfacts, fact, {
+    onBack: goBack,
+    onAnother: () => {
+      const next = funfacts.anotherFact(lastFactText);
+      lastFactText = next.text;
+      ui.updateFunFact(screens.funfacts, next);
+    },
+  });
+  updateHeader();
+  ui.showScreen('screen-funfacts');
 }
 
 // ---------- Home (Mode) ----------
 function renderHomeScreen() {
   clearTimer();
   const s = state.getState();
+  playTune(s.settings.operation || 'mul'); // this operation's jolly theme
   ui.renderHome(screens.home, s, {
     onBackToOps: goBack,
     onDifficulty: (d) => { state.updateSettings({ difficulty: d }); renderHomeScreen(); },
@@ -205,11 +255,8 @@ function renderHomeScreen() {
       ui.renderTableDialog(state.getState().settings.table, {
         onChoose: (n) => { state.updateSettings({ difficulty: 'table', table: n }); renderHomeScreen(); },
         onCancel: () => {},
-      });
+      }, state.currentOp());
     },
-    onTimed: (v) => state.updateSettings({ timed: v }),
-    onSound: (v) => { state.updateSettings({ sound: v }); if (v) sound.unlock(); },
-    onMusic: (v) => { state.updateSettings({ music: v }); v ? sound.startMusic() : sound.stopMusic(); },
     onPlay: startRound,
   });
   updateHeader();
@@ -221,8 +268,25 @@ function currentMode() {
   const s = state.getState();
   const op = s.settings.operation || 'mul';
   const mode = { op, difficulty: s.settings.difficulty, table: s.settings.table };
-  if (op === 'mul' && mode.difficulty === 'table' && !mode.table) mode.table = 2; // sensible default
+  if ((op === 'mul' || op === 'div') && mode.difficulty === 'table' && !mode.table) mode.table = 2; // sensible default
   return mode;
+}
+
+// ---------- Daily Challenge (v1.2) ----------
+// A surprise 10-question round mixing all operations. It does NOT record per-operation
+// bests/mastery (it's a fun mixed quiz), but the daily streak + longest-streak still count.
+function startDailyChallenge() {
+  const st = state.getState();
+  if (st.settings.sound) sound.unlock();
+  playTune('daily'); // punchy Daily Challenge theme
+  round = game.createRound({ challenge: true, op: 'challenge', difficulty: 'mixed' });
+  ui.renderPlayShell(screens.play, { op: 'challenge', difficulty: 'mixed' });
+  ui.showScreen('screen-play');
+  ui.setTimerVisible(screens.play, false); // challenge is always untimed (hints still help)
+  game.nextQ(round);
+  ui.renderQuestion(screens.play, round);
+  startTimerIfNeeded();
+  scheduleHint();
 }
 
 function startRound() {
@@ -241,6 +305,7 @@ function startRound() {
   game.nextQ(round);
   ui.renderQuestion(screens.play, round);
   startTimerIfNeeded();
+  scheduleHint();
 }
 
 function startTimerIfNeeded() {
@@ -262,8 +327,30 @@ function clearTimer() {
   if (timerId) { cancelAnimationFrame(timerId); timerId = null; }
 }
 
+// ---------- Hint (v1.2) ----------
+// Only in UNTIMED mode: after HINT_DELAY_MS with no answer, reveal an animated
+// "Need a Hint?" button. Tapping it shows a per-operation hint. Reset every question.
+function clearHintTimer() {
+  if (hintTimerId) { clearTimeout(hintTimerId); hintTimerId = null; }
+  ui.clearHint(screens.play);
+}
+
+function scheduleHint() {
+  clearHintTimer();
+  if (state.getState().settings.timed) return; // timed mode has its own pressure; no hint
+  hintTimerId = setTimeout(() => {
+    if (!round || round.isAnswered) return;
+    ui.showHintButton(screens.play, () => {
+      if (!round || !round.current) return;
+      const opKey = round.current.op || round.mode.op;
+      ui.showHintText(screens.play, hintFor(round.current, opKey));
+    });
+  }, HINT_DELAY_MS);
+}
+
 function onTimeout() {
   clearTimer();
+  clearHintTimer();
   if (!round || round.isAnswered) return;
   finishQuestion(game.timeout(round));
 }
@@ -271,6 +358,7 @@ function onTimeout() {
 function answerQuestion(value) {
   if (!round || round.isAnswered) return;
   clearTimer();
+  clearHintTimer();
   finishQuestion(game.answer(round, value));
 }
 
@@ -280,13 +368,14 @@ function finishQuestion(result) {
   if (s.settings.sound) { result.correct ? sound.correct() : sound.wrong(); }
   setTimeout(() => {
     const hasNext = game.advance(round);
-    if (hasNext) { ui.renderQuestion(screens.play, round); startTimerIfNeeded(); }
+    if (hasNext) { ui.renderQuestion(screens.play, round); startTimerIfNeeded(); scheduleHint(); }
     else { endRound(); }
   }, result.correct ? 850 : 1500);
 }
 
 function endRound() {
   clearTimer();
+  clearHintTimer();
   const s = state.getState();
   const summary = rewards.finishRound({
     mode: round.mode,
@@ -296,20 +385,36 @@ function endRound() {
     correct: round.correct,
   });
   if (s.settings.sound && (summary.stars >= 2 || summary.newBadges.length)) sound.reward();
+  const isChallenge = round.mode.challenge || round.mode.op === 'challenge';
   ui.renderResults(screens.results, {
     score: round.score,
     stars: summary.stars,
     newBadges: summary.newBadges,
     newBest: summary.newBest,
     dailyStreak: summary.dailyStreak,
-  }, { onAgain: startRound, onHome: () => resetTo('home') });
+  }, {
+    onAgain: isChallenge ? startDailyChallenge : startRound,
+    onHome: () => resetTo(isChallenge ? 'ops' : 'home'),
+  });
   ui.showScreen('screen-results');
 }
 
 // ---------- Progress / Rewards / Help (history routes) ----------
+// My Progress is context-aware (v1.2): before an operation is picked this session it shows
+// an all-operations overview; in/after an operation it shows that operation's detail.
 function renderProgressScreen() {
-  const opKey = state.currentOp();
-  ui.renderProgress(screens.mastery, opKey, state.getOpProgress(opKey), { onHome: goBack });
+  const activeOp = state.getState().settings.operation; // null before an operation is picked
+  if (!activeOp) {
+    ui.renderProgressOverview(screens.mastery, state.getState().ops, {
+      onHome: goBack,
+      onPickOp: (opKey) => {
+        // Drill into one operation's detail without changing the session's chosen operation.
+        ui.renderProgress(screens.mastery, opKey, state.getOpProgress(opKey), { onHome: renderProgressScreen });
+      },
+    });
+  } else {
+    ui.renderProgress(screens.mastery, activeOp, state.getOpProgress(activeOp), { onHome: goBack });
+  }
   ui.showScreen('screen-mastery');
   updateHeader();
 }
@@ -335,8 +440,19 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------- Bridge for markup-created buttons ----------
-// Play screen back = deliberate quit to the Mode screen (round abandoned), not a history pop.
-window.MathFun = { answer: answerQuestion, goHome: () => { round = null; navigate('home', { replace: true }); } };
+// Play screen back = deliberate quit (round abandoned): a challenge returns to the picker,
+// a normal round returns to its Mode screen.
+window.MathFun = {
+  answer: answerQuestion,
+  goHome: () => {
+    clearTimer();
+    clearHintTimer();
+    const wasChallenge = round && (round.mode.challenge || round.mode.op === 'challenge');
+    round = null;
+    if (wasChallenge) resetTo('ops');
+    else navigate('home', { replace: true });
+  },
+};
 
 // Robust theme toggle via event delegation - fires even if a direct binding is missed,
 // and survives any header re-render.

@@ -2,7 +2,7 @@
 // v1.1: operation-aware. mode = { op, difficulty, table }. Multiplication records A x B mastery;
 // all operations accumulate answered/correct for per-operation accuracy stats.
 
-import { generateQuestion } from './operations.js';
+import { generateQuestion, generateChallengeQuestion } from './operations.js';
 import { getState } from './state.js';
 import * as mastery from './mastery.js';
 
@@ -28,7 +28,9 @@ export function createRound(mode) {
 export function nextQ(round) {
   const s = getState();
   const mastMap = (s.ops && s.ops.mul && s.ops.mul.mastery) || {};
-  round.current = generateQuestion(round.mode, mastMap);
+  round.current = round.mode.challenge
+    ? generateChallengeQuestion(mastMap)
+    : generateQuestion(round.mode, mastMap);
   round.isAnswered = false;
   return round.current;
 }

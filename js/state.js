@@ -25,6 +25,11 @@ function defaultMulProgress() {
   return {
     bests: { easy: 0, medium: 0, hard: 0, table: 0 },
     mastery: {}, // "AxB" (A<=B) -> { attempts: number[] } last <=5 (1 correct / 0 wrong)
+    // v1.2: multiplication also tracks round/accuracy stats so its My Progress matches
+    // the other operations (kept alongside the mastery grid).
+    rounds: 0,
+    answered: 0,
+    correct: 0,
   };
 }
 
@@ -55,7 +60,7 @@ function defaultProgress() {
       table: null,
       timed: false,
       sound: true,
-      music: false,
+      music: true, // v1.2: music plays by default when a player lands
     },
     ops: defaultOps(),
     longestStreak: 0,                          // best in-round streak (profile-level)

@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** v1.1.0 ported to the live app (Addition, Subtraction & Multiplication; Division "coming soon") - awaiting Isaac's GitHub Desktop push + deployed verify. Live currently serves v1.0.7 until pushed.
+- **Status:** Shipped & deployed v1.1.0 (Addition, Subtraction & Multiplication; Division "coming soon") - https://isaacgera.github.io/MathFun/
 - **Live:** https://isaacgera.github.io/MathFun/
 - **Description:** Playful maths game for kids 5-15. Multiplication 1x-20x shipped; v1.1 adds an operation picker (＋ － ✕ ÷) with full Addition & Subtraction (Division coming next). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
@@ -515,3 +515,201 @@ https://app.mcpmarket.com/**. This is an exploration/learning goal as much as a 
 
 Order suggestion: do **Division** first (clean, in-keeping, low-risk), then take **FunFacts** into a
 Plan-mode discussion to settle the network/privacy/deployment track before building.
+
+## v1.1.0 pushed & verified live - 07 Sep 2026
+Isaac committed + pushed via GitHub Desktop (code + docs + the four PWA icons) and verified the
+deployed site. **v1.1.0 is live at https://isaacgera.github.io/MathFun/** - operations picker
+(Addition, Subtraction, Multiplication; Division "coming soon"), per-operation progress, nav-history
+back + header Home, emoji tiles, upbeat music, and the empty-name fix. The previously-uncommitted PWA
+PNG icons are now on the deployed site, closing that gap. Ideas.md = Built (MathFun v1.1.0); SPEC
+files shipped-v1.1.0; Phase 7 deploy ticked.
+
+**Session end. v1.1.0 complete and deployed.** Next session (see the "direction" note above): build
+Division fully, then take the FunFacts tab (MCP servers / APIs) into a Plan-mode discussion to settle
+the network/privacy/offline/deployment track before building.
+
+## v1.2 prototype - Division, Fun Facts, hints, daily challenge + polish - 09 Sep 2026
+Built the next batch of features **prototype-first** in `prototypes/` (version `1.2.0-proto`,
+storage `mathfunproto_`, banner). **The shipped app at the root is untouched at v1.1.0** and
+only changes after Isaac tests, signs off, and we port in one pass.
+
+**Mode:** Spec-ish / Quick Spec (multi-behaviour on a shipped app: new operation + new screen +
+data-model-adjacent + generation). Build-standards flags unchanged: Simple-tier rigour, vanilla
+no-build stack, mobile-first PWA.
+
+**Flag resolved (Fun Facts):** the earlier "FunFacts = Plan-mode / MCP / network" concern does
+NOT apply here - Isaac's ask was random fun facts about numbers/operations, so it's built as a
+**bundled, local, offline** fact set (`funfacts.js`, 20 facts). No network, no API, no keys, no
+privacy change - fully in keeping with MathFun's local-first stance.
+
+**The eight changes (all in `prototypes/`):**
+1. **Division built fully.** `operations.js`: `divQuestion` generates whole-number division as the
+   inverse of the tables (divisor x quotient = dividend, so answers are always exact - no
+   remainders). Levels Easy/Medium/Hard (caps 5/10/20) + **Pick-a-table** (divide by a chosen
+   1-20). `buildDivDistractors` gives believable near-misses. `div.playable` flipped true, so the
+   "Coming soon" badge disappears automatically. Div uses the accuracy-summary progress view
+   (no A x B grid). `modeLabel`, Home table card and the table dialog are now operation-aware
+   (division reads "Divide by which number?", "÷ N").
+2. **Fun Facts tab.** New `funfacts.js` (local facts). New `#screen-funfacts` + `renderFunFacts`/
+   `updateFunFact` (a card with a big **Another fact** button, pop animation). A **Fun Facts tile**
+   (sunny-yellow) sits with the operation tiles on the picker.
+3. **Age selector -> stepper.** Replaced the 5-15 tile grid (in both create-wizard and edit) with a
+   single **colourful editable box, default 5, with - / + buttons**; manually typeable, clamped
+   5-15 (clamps on blur/Enter, buttons disable at the ends). `AGE_MIN/MAX/DEFAULT` + `ageStepperMarkup`
+   + `wireAgeStepper` in `ui.js`.
+4. **Copy:** operations screen heading is now **"Pick an Option..."** (dropped the "Choose what to
+   practise / Pick a kind of sum" lines).
+5. **Mobile header on one line.** Theme/Home labels wrapped in icon+text spans; on <=560px the text
+   is hidden (**icon-only Theme + Home**), the brand wordmark hides (clickable logo mark stays),
+   header set to `nowrap`, chip tightened - so the top-right no longer wraps/misaligns on phones.
+   Full labels kept in `aria-label`/`title`.
+6. **"Need a Hint?"** In **untimed mode only**, after **7s** with no answer an **animated pulsing
+   "💡 Need a Hint?"** button appears below the options; tapping it shows a **per-operation hint**
+   (count on / count back / groups of / think of the times table). Resets each question; cleared on
+   answer, timeout, round end and quit. `hintFor()` in `operations.js`; timer + wiring in `app.js`.
+7. **Daily Challenge.** A **"🏆 Daily Challenge"** button under the operation tiles starts a 10-question
+   **mixed** round drawing a random playable operation + level per question (`generateChallengeQuestion`).
+   It's a fun mixed quiz: **not recorded** against any single operation's bests/mastery/accuracy, but
+   the **daily streak + perfect badge still count**. Always untimed; hints still work. Play-again
+   restarts the challenge, Home returns to the picker.
+8. **Jollier music.** `sound.js` background loop reworked to a bouncier ~160bpm **platformer-style**
+   theme: a chirpy square-wave lead (32-step call-and-response, octave triangle double, swung
+   off-beats) over a walking sine bass with off-beat hats. Still synthesized WebAudio (no files);
+   exports (`startMusic`/`stopMusic`/`isMusicOn`) unchanged.
+
+**Also:** `APP_VERSION` -> `1.2.0-proto`; `sw.js` VERSION -> `1.2.0-proto` (cache `mathfun-proto-1.2.0-proto`)
+and `funfacts.js` added to precache; index.html Help copy updated (division playable, hint button,
+Fun Facts + Daily Challenge).
+
+**Verification note:** as usual this Windows/Kiro shell can't run Node or a browser, so code was
+cross-checked by reading every consumer of the changed/added APIs - imports/exports line up,
+no dangling references, all 11 changed/created files pass diagnostics with zero errors. **Needs
+Isaac's manual Live Server pass** of `prototypes/` before we port.
+
+**Isaac's Live Server checklist (test the prototype, http not file://):**
+1. Serve `Learning/MathFun/prototypes/`; open the URL. (Sandbox `mathfunproto_` data, separate from live.)
+2. **Division:** picker no longer shows "Coming soon" on ÷. Play Easy/Medium/Hard + Pick-a-table;
+   confirm every answer is a whole number and the 4 options are believable (no dupes, none <=0).
+3. **Fun Facts:** the yellow Fun Facts tile opens the facts screen; "Another fact" swaps the fact
+   with a little pop; back arrow returns to the picker.
+4. **Age stepper:** create + edit a profile - box defaults to 5, +/- change it, you can type a
+   number, and it clamps to 5-15 (buttons grey out at the ends).
+5. **Mobile header:** narrow the window / use a phone - Theme + Home show as icons only, everything
+   stays on one line, nothing overlaps the player chip.
+6. **Need a Hint?:** with the **Timer OFF**, wait ~7s on a question - the pulsing "Need a Hint?"
+   button appears; tapping it shows a sensible hint for that operation. With the **Timer ON**, it
+   should **never** appear.
+7. **Daily Challenge:** the button under the tiles starts a mixed 10-question round (label reads
+   "🏆 Daily Challenge"); questions vary across operations; finishing it doesn't change your
+   per-operation best scores but does count your day streak.
+8. **Music:** turn Music on - confirm the new bouncier tune, and that Sound/Timer still behave.
+9. **General:** keyboard answering (1-4), Light/Dark on every screen incl. before a profile,
+   back/Home navigation, and that existing Add/Sub/Mul + progress/rewards still work.
+
+**Pending (next steps):** Isaac verifies -> then **port to the live app** (version -> 1.2.0, cache
+`mathfun-v1.2.0`, storage stays `mathfun_`, preserve the shipped app-level theme, README changelog +
+userguide + SPEC docs, Ideas.md -> Built (MathFun v1.2.0), deploy + verify). `Ideas.md` row should
+move to **In Progress (MathFun v1.2, from v1.1.0)** now that a build has begun.
+
+### v1.2 prototype - round 2 tweaks (Isaac's test feedback) - 09 Sep 2026
+Six refinements after Isaac's first Live Server pass of the `1.2.0-proto` build. Still
+**prototype-only** (`prototypes/`, `1.2.0-proto`); the shipped app stays at v1.1.0 until the port.
+
+1. **Division "Pick a table" -> "Pick a number".** The division difficulty card now reads
+   "Pick a number" (multiplication still says "Pick a table"); the picker dialog already read
+   "Divide by which number?".
+2. **Hint copy trimmed.** Dropped the restating preamble so hints get straight to the help,
+   keeping the bulb: e.g. multiplication "Try adding N to itself M times, or use a table you
+   know."; division "Think of your N times table: N times what makes M?".
+3. **Landing layout -> 2 x 3.** Fun Facts and **Daily Challenge are now both tiles** in the
+   operations grid (Add/Sub, Mul/Div, Fun Facts/Daily Challenge). Removed the separate
+   bottom "Daily Challenge" button. Tiles are **~25% shorter** (min-height 150 -> 112px, smaller
+   emoji chip) so the grid fits better on screen. Daily Challenge tile gets a bright cyan tint.
+4. **Sound controls moved into the player menu.** Timer / Sound / Music toggles now live in the
+   top-right profile dropdown (just under Profile), toggling in place without closing the menu -
+   removed from the Mode screen. **Music now defaults ON** for new players and starts when they
+   land on the operations picker (browser autoplay is satisfied by the profile-selection tap).
+   The Mode screen hint now points to the menu for Timer/Sound/Music + progress/rewards/help.
+5. **Age selector 0-100, default 5.** The stepper pre-fills **5**, and the child can go down to
+   **0** or up to **100** by typing or the +/- buttons; values are clamped so they can never go
+   negative or above 100. Removed the "we'll pick questions just right for your age" helper line
+   and the earlier "must enter age" gate (a default always exists now).
+6. **Fun Facts grown to 100** offline facts (kid-friendly maths/number facts), still fully local -
+   no network.
+
+**Verification:** all touched files pass diagnostics with zero errors; logic cross-read (chip-menu
+switches, age clamp, 2x3 grid handlers, division labels). The Windows/Kiro terminal still can't
+reliably run in this OneDrive path, so **needs Isaac's Live Server recheck** of these six, then we
+continue toward the port. Prototype remains `1.2.0-proto`.
+
+**Recheck checklist:** (a) Division card says "Pick a number"; (b) hints read cleanly with just the
+bulb + advice; (c) landing shows a 2x3 tile grid, tiles shorter, Daily Challenge as a tile; (d) open
+the player menu - Timer/Sound/Music toggle there and stay put; music is playing by default after you
+pick a player; (e) age box starts at 5, +/- and typing work, won't go below 0 or above 100; (f) Fun
+Facts cycles through lots of different facts.
+
+## v1.2.0 ported to the live app + release chores done - 09 Sep 2026
+Isaac signed off the prototype, so I did the one-pass port from `prototypes/` to the app root and
+the release chores. **Not yet pushed/deployed** - Isaac pushes via GitHub Desktop (as usual).
+
+**What shipped in v1.2.0:** full **Division** (whole-number, inverse of the tables, always exact;
+Easy/Medium/Hard + **Pick a number**), a local **Fun Facts** tab (100 offline facts), a mixed
+**Daily Challenge**, a **"Need a Hint?"** helper (untimed mode, after 7s, per-operation tips),
+a context-aware **My Progress** (all-operations overview before an operation is picked; that
+operation's detail once in one; multiplication now uses the same rounds/accuracy summary with its
+mastery grid kept below), **per-context music** (a distinct jolly tune per operation, Fun Facts and
+Daily Challenge; **music on by default**), Timer/Sound/Music moved into the **player menu** (compact
+icon row), an editable **age stepper** (default 5, range 0-100), and layout/mobile polish (fixed
+2x3 option tiles, single-line mobile header with icon-only Theme/Home).
+
+**Ported (production settings, not a blind copy):**
+- Neutral modules copied as finalized: `operations.js`, `game.js`, `rewards.js`, `mastery.js`,
+  `sound.js` (per-context tunes), `ui.js`, plus new `funfacts.js` (100 facts; dead quiz helpers
+  removed), and `styles.css` (prototype banner block dropped).
+- `state.js` - kept the shipped **`mathfun_` prefix + app-level theme** (getTheme/setTheme) and the
+  schema-3 migration; added `music: true` default and multiplication `rounds/answered/correct`
+  stats.
+- `app.js` - kept the shipped **app-level theme** (delegated `#themeToggle` click, resolveTheme/
+  osPrefersDark) and the network-first SW auto-reload; layered on the funfacts screen/route,
+  `playTune`/`lastTune` per-context music, Daily Challenge, the hint timer, challenge-aware
+  endRound/goHome, the chip-menu Timer/Sound/Music handlers, and the context-aware progress.
+  `APP_VERSION` -> **1.2.0**.
+- `index.html` - added `#screen-funfacts` + header icon/text spans; updated meta description +
+  Help copy. Kept the production head/manifest/icons; no prototype banner.
+- `sw.js` - `VERSION` -> **1.2.0** (cache `mathfun-v1.2.0`), added `js/funfacts.js` to precache;
+  kept network-first + icon precache + hardened install.
+- `manifest.webmanifest` - description updated (no "coming soon").
+
+**Release chores:** README (features/layout + **v1.2.0 changelog**), `userguide.html` (division,
+Fun Facts, Daily Challenge, hint, per-op music, progress overview, age stepper; footer -> v1.2.0),
+SPEC requirements (status + R11.6 division playable + new **R12**), design (status + new
+**section 13**), tasks (**Phase 8**), and `Ideas.md` -> **Built (MathFun v1.2.0)**.
+
+**Data-safety note:** live users are schema 3 (per-operation `ops.*`). v1.2 only **adds** fields
+(`ops.mul.rounds/answered/correct` default 0) - `fillDefaults` backfills them, nothing is dropped;
+multiplication mastery/bests are preserved. **Music-default caveat:** `fillDefaults` keeps existing
+users' saved `music:false`; only **new** profiles get music on.
+
+**Verification:** all **15** live root files pass diagnostics with zero errors; the port was a
+deliberate merge (theme/storage/SW kept from the shipped app), cross-read against every consumer.
+As always, the Windows/Kiro shell can't run a browser here - needs Isaac's deploy + hosted check.
+
+**Isaac - to ship & verify:**
+1. **Push** via GitHub Desktop (review the diff; `prototypes/` is git-ignored, so only the app +
+   docs go up). Suggested commit: `MathFun v1.2.0 - division, fun facts, daily challenge, hints, per-op music`.
+2. After Pages updates, **hard-refresh** (Ctrl+Shift+R) or reopen the installed app once so the
+   `mathfun-v1.2.0` service worker activates.
+3. **Verify (deployed, ideally on a profile with existing multiplication history):**
+   - Old multiplication progress/bests still show under Multiplication (migration OK).
+   - **Division** plays (Easy/Medium/Hard + "Pick a number"); answers are always whole numbers.
+   - **Fun Facts** cycles facts; **Daily Challenge** runs a mixed round and counts the day streak.
+   - **Need a Hint?** appears after ~7s with Timer OFF, never with Timer ON.
+   - **My Progress**: overview before picking an operation; detail once in one; multiplication
+     shows the summary + grid.
+   - **Music**: different tune per screen; on by default for a new player; Timer/Sound/Music toggle
+     in the player menu.
+   - **Age stepper** (0-100, default 5); **2x3 tiles** + single-line header on mobile.
+   - Theme toggle still works on every screen incl. before a profile (v1.0.5 guard).
+   - Optional: Lighthouse PWA/installability still green; installs and runs offline.
+
+**Status: v1.2.0 ported, documented and diagnostics-clean; awaiting Isaac's push + hosted verify.**

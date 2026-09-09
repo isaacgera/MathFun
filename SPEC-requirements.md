@@ -2,8 +2,8 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Shipped v1.1.0 (Addition, Subtraction & Multiplication; Division "coming soon") - https://isaacgera.github.io/MathFun/
-- **Audience:** School-going children aged 5-15 (fun-first, not a dry drill).
+- **Status:** Shipped v1.2.0 (Addition, Subtraction, Multiplication & Division + Fun Facts + Daily Challenge) - https://isaacgera.github.io/MathFun/
+- **Audience:** School-going children (fun-first, not a dry drill).
 
 ## Summary
 MathFun is a playful, local-first maths game. A child picks an **operation**, chooses how
@@ -12,10 +12,12 @@ streaks and badges as they go. A mastery grid shows which multiplication tables 
 and which need more work.
 
 - **v1.0.x (shipped):** multiplication only (1x-20x).
-- **v1.1 (in progress):** an **operation picker landing page** (Addition / Subtraction /
-  Multiplication / Division) and **full Addition & Subtraction** modes with their own
-  difficulty ranges and per-operation progress. **Division** is present as a "coming soon"
-  tile, to be built next (multiplication-style ranges).
+- **v1.1 (shipped):** an **operation picker landing page** and **full Addition & Subtraction**
+  with their own difficulty ranges and per-operation progress. Division stubbed ("coming soon").
+- **v1.2 (shipped):** **Division** built fully (whole-number, exact); a local **Fun Facts** tab
+  (100 facts); a mixed **Daily Challenge**; a **"Need a Hint?"** helper (untimed mode); a
+  context-aware **My Progress**; **per-context music**; Timer/Sound/Music moved into the player
+  menu (music on by default); an editable **age stepper** (0-100, default 5).
 
 ## Build-standards flags (agreed at kickoff)
 - **Rigour:** Simple tier - tidy modular vanilla code, design tokens, accessibility built in; no heavy CI/automated tests.
@@ -143,11 +145,39 @@ with that when the time comes.)
   **Easy** = single-digit numbers (up to 10), **Medium** = two-digit (up to 100),
   **Hard** = three-digit (up to 1000), **Super Hard** = four-digit (up to 10000).
 - R11.5 **Subtraction never produces a negative answer** - the larger number is always minuend (bigger - smaller), so results are >= 0.
-- R11.6 **Division** appears as a tile clearly marked **"Coming soon"** and is not yet playable in v1.1 (planned next, with multiplication-style ranges).
+- R11.6 **Division** is fully playable (v1.2): whole-number division built as the inverse of the
+  tables, so answers are always exact (no remainders). Levels Easy (up to 5), Medium (up to 10),
+  Hard (up to 20), plus **Pick a number** (divide by a chosen 1-20). (Was "coming soon" in v1.1.)
 - R11.7 For +/- , the three wrong options are **believable near-misses** (e.g. +/-1, +/-10, a single-digit slip, a carry/borrow mistake), never random, never duplicated or equal to the correct answer (extends R2.3).
 - R11.8 **Progress is tracked per operation:** best scores and mastery/stats are separate for each operation. Existing multiplication progress is migrated without loss (see R7.4).
 - R11.9 The **mastery grid (A x B)** applies to multiplication. Addition & subtraction show a simpler per-operation **progress summary** (e.g. rounds played, best score per level, recent accuracy) rather than a grid.
 - R11.10 The four-option multiple-choice model, 10-question rounds, optional Timer, personalised feedback, stars/streaks/badges, sound/music and accessibility rules (R2-R5, R9, R10) all apply equally to every playable operation.
+
+### R12 - v1.2 features (Fun Facts, Daily Challenge, hints, progress, music, age)
+**As a child, I want more ways to learn and play, and controls that stay simple.**
+- R12.1 **Fun Facts:** a tile on the picker opens a screen showing one kid-friendly maths/number
+  fact at a time with an "Another fact" button. Facts are **bundled locally** (100 of them) - no
+  network, no API, consistent with the local-first/offline stance (R7.2).
+- R12.2 **Daily Challenge:** a tile starts a mixed 10-question round drawing a random playable
+  operation + level per question. It counts the **daily streak** but is **not** recorded against
+  any single operation's best scores or mastery (it's a fun mixed quiz).
+- R12.3 **Need a Hint?:** in **untimed** mode only, if the child pauses ~7s on a question an
+  animated "Need a Hint?" button appears; tapping it shows a **per-operation** tip (count on /
+  count back / groups of / times-table) that guides without stating the final answer. Never
+  appears in Timer mode.
+- R12.4 **My Progress is context-aware:** opened before an operation is picked this session it
+  shows an **all-operations overview** (rounds, accuracy, best per operation, each tappable to
+  drill in); opened in/after an operation it shows **that operation's** detail. Multiplication
+  shows the same rounds/accuracy summary as the others, with its A x B mastery grid kept below.
+- R12.5 **Per-context music:** each operation, Fun Facts and the Daily Challenge has its own
+  upbeat synthesized tune; the tune switches with the screen. **Music is on by default** for new
+  players (respecting browser autoplay, which needs a first gesture). Timer / Sound / Music
+  toggles live in the **player menu** (compact icon row), not on the Mode screen.
+- R12.6 **Age selector:** a single colourful stepper - defaults to **5**, adjustable by typing or
+  - / + buttons, clamped to the range **0-100** (never negative or above 100).
+- R12.7 **Layout/mobile:** the option tiles are a fixed **2x3** grid that stays squarish and tidy
+  on both phone and desktop; the header (theme / home / player) stays on **one line** on mobile
+  with icon-only Theme/Home buttons (full labels kept in aria-label/title).
 
 ---
 

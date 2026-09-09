@@ -1,13 +1,13 @@
 ﻿# MathFun - Design
 
-- **Category:** Learning | **Tier:** Simple | **Status:** Shipped v1.1.0 (Addition, Subtraction & Multiplication; Division "coming soon")
+- **Category:** Learning | **Tier:** Simple | **Status:** Shipped v1.2.0 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge)
 - **Stack:** Vanilla HTML/CSS/JS, no build step. **Platform:** mobile-first installable PWA.
 - **Licence:** MIT. **Live:** https://isaacgera.github.io/MathFun/
 
 This design is intentionally concise (Simple tier). Sections 1-11 reflect the multiplication app
-(built prototype-first, ported to the app root as v1.0.0 and iterated to v1.0.7). **Section 12
-covers v1.1** (operations - Addition, Subtraction, Multiplication, with Division stubbed), built
-prototype-first and **now ported and shipped as v1.1.0**.
+(v1.0.x). **Section 12 covers v1.1** (operations + Add/Sub, Division stubbed). **Section 13 covers
+v1.2** (Division built, Fun Facts, Daily Challenge, hints, context-aware progress, per-context
+music, age stepper), built prototype-first and **now ported and shipped as v1.2.0**.
 
 ## 1. Architecture & file layout (as shipped)
 No framework, no bundler. ES modules loaded from `index.html`. The shipping app lives at the
@@ -224,7 +224,72 @@ runs on first load). The port preserved the shipped app's app-level theme (`stat
 + delegated toggle) rather than the prototype's per-settings theme, so the v1.0.5 theme fix is not
 regressed.
 
+## 13. v1.2 - Division, Fun Facts, Daily Challenge + polish (shipped v1.2.0)
+Built prototype-first (`1.2.0-proto`), then ported to the app root. Preserves the shipped
+`mathfun_` storage, app-level theme and network-first SW; adds the following.
+
+### 13.1 Division (operations.js)
+`div.playable = true`, `levels: ['easy','medium','hard','table']`, `usesGrid:false`. Questions are
+built as the **inverse of the tables**: pick a divisor and quotient, multiply for the dividend, so
+`dividend / divisor = quotient` is always exact (no remainders). Factor caps: Easy 5, Medium 10,
+Hard 20; **Pick a number** divides by the chosen 1-20 (quotient 1-20). Distractors are near-miss
+quotients (off-by-one, the divisor, small +/- ), never <=0. `hintFor` frames it as "how many Ns
+make M?" and starts the skip-count.
+
+### 13.2 Fun Facts (funfacts.js + #screen-funfacts)
+A new module holding **100** `{emoji, text}` facts. `randomFact()` / `anotherFact(prev)` pick a
+(different) fact. `ui.renderFunFacts` shows one with an "Another fact" button; `updateFunFact`
+swaps it in place with a pop. Fully local/offline (R7.2) - no network. Reached from a picker tile.
+
+### 13.3 Daily Challenge
+`generateChallengeQuestion()` picks a random playable operation + non-table level per question and
+tags `q.op`. `game.nextQ` routes through it when `round.mode.challenge` is set. `startDailyChallenge`
+runs an untimed 10-question mixed round. `rewards.finishRound` **skips** per-operation
+bests/mastery/accuracy for a challenge (guarded by `isChallenge`) but still counts the daily streak
+and the perfect-round badge. Results "Play again" restarts the challenge; Home returns to the picker.
+
+### 13.4 Need a Hint? (untimed only)
+`app.js` schedules a `setTimeout` (7s) on each question when Timer is off; on fire it reveals an
+animated hint button (`ui.showHintButton`). Tapping shows `hintFor(question, opKey)` via
+`ui.showHintText`. The hint timer is cleared on answer, timeout, round end and quit; it never runs
+in Timer mode. Hints give a per-operation method + first step, not the final answer.
+
+### 13.5 Context-aware My Progress
+`renderProgressScreen` checks `settings.operation`: if none is set this session it renders
+`ui.renderProgressOverview` (a card per playable operation - rounds, accuracy, best - each drills
+into detail); if one is set it renders that operation's `ui.renderProgress`. **All operations now
+use the same summary layout** (rounds / accuracy / best per level); multiplication additionally
+appends the A x B mastery grid. To support this, multiplication now also accumulates
+`rounds/answered/correct` (added to `defaultMulProgress`; recorded via `recordOpRound` for every
+operation except the challenge).
+
+### 13.6 Per-context music (sound.js)
+The single loop is replaced by a `TUNES` registry keyed by context (`mul/add/sub/div/facts/daily`),
+each with its own `LEAD`, `BASS`, lead waveform and tempo. `startMusic(tuneKey)` switches tunes
+(no-op if already playing that tune). `app.js` `playTune(key)` plays the context tune when Music is
+on and remembers `lastTune` so the menu Music toggle resumes the right one. **Music defaults on**
+(`settings.music: true`) for new profiles; existing users keep their saved preference.
+
+### 13.7 Sound controls in the player menu
+Timer / Sound / Music toggles moved from the Mode screen into the header profile menu as a compact
+three-across icon row (`renderProfileChip` takes `settings` + `onTimed/onSound/onMusic`); the
+switches toggle in place without closing the menu.
+
+### 13.8 Age stepper (ui.js)
+`ageStepperMarkup` + `wireAgeStepper`: a single editable number box (default **5**) flanked by
+- / + buttons; typing or the buttons clamp to **0-100** (`AGE_MIN`/`AGE_MAX`), so it can never go
+negative or above 100. Replaces the earlier 5-15 tile grid in both create and edit.
+
+### 13.9 Layout / mobile
+Option tiles are a fixed **2x3** grid (`.op-grid` = 2 capped columns, centred, width-limited),
+squarish and short. The header uses `nowrap`; at <=560px Theme/Home become icon-only and the
+brand wordmark hides (the clickable logo mark stays), keeping everything on one line.
+
+### 13.10 Versioning (shipped)
+`APP_VERSION` 1.2.0; `sw.js` VERSION 1.2.0 (cache `mathfun-v1.2.0`) with `funfacts.js` added to the
+precache; manifest description updated. Storage stays `mathfun_` (schema-3 migration unchanged -
+no data loss; multiplication mastery/bests preserved, new counters start at 0).
+
 ## Deferred to later versions
-Fully playable **Division** (planned right after +/-; multiplication-style ranges), number-pad/
-typed input, progress export/import, cloud sync, leaderboards. (Keep multi-operation growth
-aligned with the "Maths Quiz Builder" idea.)
+Number-pad/typed input, progress export/import, cloud sync, leaderboards, more fact-flavoured
+challenge questions. (Keep multi-operation growth aligned with the "Maths Quiz Builder" idea.)

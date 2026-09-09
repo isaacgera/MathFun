@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#6d5efc">
-  <meta name="description" content="MathFun - a playful maths game for kids. Practise addition, subtraction and multiplication (division coming soon) with fun rewards.">
+  <meta name="description" content="MathFun - a playful maths game for kids. Practise addition, subtraction, multiplication and division, with fun facts, a daily challenge and rewards.">
   <title>MathFun</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
@@ -18,8 +18,8 @@
       <span class="brand-name">MathFun</span>
     </button>
     <div class="header-right">
-      <button class="btn btn-ghost theme-toggle" id="themeToggle" aria-label="Switch theme" title="Switch theme">Theme</button>
-      <button class="btn btn-ghost home-btn hidden" id="headerHomeBtn" aria-label="Home - choose an operation" title="Home">&#127968; Home</button>
+      <button class="btn btn-ghost theme-toggle" id="themeToggle" aria-label="Switch theme" title="Switch theme"><span class="hdr-ico" aria-hidden="true">&#9728;&#65039;</span><span class="hdr-txt">Light</span></button>
+      <button class="btn btn-ghost home-btn hidden" id="headerHomeBtn" aria-label="Home - choose an operation" title="Home"><span class="hdr-ico" aria-hidden="true">&#127968;</span><span class="hdr-txt">Home</span></button>
       <div class="profile-chip hidden" id="profileChip"></div>
     </div>
   </header>
@@ -33,6 +33,9 @@
 
     <!-- Operations picker (+ - x div) -->
     <section class="screen" id="screen-ops" aria-label="Choose an operation"></section>
+
+    <!-- Fun Facts -->
+    <section class="screen" id="screen-funfacts" aria-label="Fun facts"></section>
 
     <!-- Home (Mode) -->
     <section class="screen" id="screen-home" aria-label="Home"></section>
@@ -60,19 +63,22 @@
         <ol>
           <li>Set up your player: name, boy or girl, age and a fun character.</li>
           <li>Choose what to practise: <strong>Addition</strong>, <strong>Subtraction</strong>,
-              <strong>Multiplication</strong> (Division is coming soon!).</li>
+              <strong>Multiplication</strong> or <strong>Division</strong>.</li>
           <li>Pick how hard: <strong>Easy</strong>, <strong>Medium</strong>, <strong>Hard</strong> or
-              <strong>Super Hard</strong> (times tables also has <strong>Pick a table</strong>).</li>
+              <strong>Super Hard</strong> (times tables and division also have
+              <strong>Pick a number</strong>).</li>
           <li>Tap <strong>Play</strong>. You'll get 10 questions.</li>
           <li>Tap the answer you think is right (or press keys <strong>1-4</strong>).</li>
           <li>Earn <strong>stars</strong>, build <strong>streaks</strong>, and collect <strong>badges</strong>!</li>
         </ol>
+        <p>Try <strong>&#127775; Fun Facts</strong> for cool things about numbers, or the
+           <strong>&#127942; Daily Challenge</strong> for a surprise mix of questions. With the
+           <strong>Timer off</strong>, a <strong>&#128161; Need a Hint?</strong> button pops up if
+           you're stuck for a few seconds.</p>
         <p>Use the <strong>&larr;</strong> arrow to go back a screen, or <strong>&#127968; Home</strong>
-           (top right) to jump to the operation picker. Turn on <strong>Timer</strong> for a timed
-           challenge, or leave it off for no rush. <strong>Sound</strong> plays happy effects and
-           <strong>Music</strong> plays an upbeat tune. Open the menu at the top right for your
-           <strong>Profile</strong>, <strong>Rewards</strong>, <strong>Progress</strong> and to
-           <strong>switch player</strong>.</p>
+           (top right) to jump to the operation picker. Open the menu at the top right for your
+           <strong>Profile</strong>, the <strong>Timer / Sound / Music</strong> toggles, your
+           <strong>Rewards</strong> and <strong>Progress</strong>, and to <strong>switch player</strong>.</p>
         <p class="muted">Number sizes for + and -: Easy = single digit (to 10), Medium = two digits
            (to 100), Hard = three digits (to 1000), Super Hard = four digits (to 10000).</p>
         <p class="muted">All your progress stays on this device. Nothing is sent anywhere.</p>
