@@ -1,6 +1,6 @@
 ﻿# MathFun - Tasks
 
-- **Tier:** Simple | **Status:** Shipped v1.3.0 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes) | **Workflow:** prototype-first.
+- **Tier:** Simple | **Status:** Shipped v1.3.1 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes) | **Workflow:** prototype-first.
 - **Live:** https://isaacgera.github.io/MathFun/
 - Shipping app at `Learning/MathFun/` root; the sandbox it was built in is kept at `Learning/MathFun/prototypes/` (git-ignored, not published).
 

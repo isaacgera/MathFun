@@ -984,6 +984,24 @@ export function renderProfileChip(profile, handlers, settings = {}) {
   wireMenuSwitch('musicToggle', handlers.onMusic);
   // Keep the menu open when interacting inside it (only outside clicks close it).
   menu.addEventListener('click', (e) => e.stopPropagation());
-  document.addEventListener('click', close);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+  // Outside-click / Escape closing is bound ONCE at the document level (not per-render), and
+  // it looks up the CURRENT chip menu each time. Binding it per render (as before) stacked a
+  // new listener on every header re-render - each capturing an OLD, replaced menu element -
+  // which on mobile could immediately re-close the freshly opened menu, so nothing was
+  // selectable. A single, self-healing global handler avoids that entirely.
+  if (!renderProfileChip._globalBound) {
+    renderProfileChip._globalBound = true;
+    const closeCurrent = (ev) => {
+      const m = document.getElementById('chipMenu');
+      const b = document.getElementById('chipBtn');
+      if (!m || m.hidden) return;
+      // Ignore taps inside the menu or on the chip button (those manage themselves).
+      if (ev && (m.contains(ev.target) || (b && b.contains(ev.target)))) return;
+      m.hidden = true;
+      if (b) b.setAttribute('aria-expanded', 'false');
+    };
+    document.addEventListener('click', closeCurrent);
+    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closeCurrent(null); });
+  }
 }

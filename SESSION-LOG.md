@@ -1085,3 +1085,32 @@ Windows/Kiro shell can't run a browser here - needs Isaac's deploy + hosted chec
 
 **Status: v1.3.0 ported, documented and diagnostics-clean; awaiting Isaac's push + hosted verify.
 Ideas.md deliberately left at In Progress until Isaac's go-ahead.**
+
+## v1.3.1 - bug fix: player menu unselectable on mobile - 12 Sep 2026
+Isaac verified v1.3.0 on the deployed site and hit a **mobile-only** bug: tapping the player
+chip (top-right) opened the menu, but **no item could be selected** - Profile, Theme, the
+Timer/Sound/Music toggles, Rewards, Progress, Switch player all did nothing. (Fine on laptop.)
+
+- **Root cause (Bug Fix mode):** `renderProfileChip` bound the outside-click **and** Escape
+  close handlers on the `document` **every time it ran** - and `updateHeader()` re-renders the
+  chip on almost every navigation. Each render stacked another global `close` listener, and each
+  captured (via closure) the specific `menu` element from *that* render. After a few screens
+  there were several stale listeners referencing replaced menus; on mobile the tap sequence let
+  one of them fire right after open and re-close the menu, so items were never actually
+  interactable. Desktop happened to escape it most of the time.
+- **Fix (`ui.js`, both live `js/` and `prototypes/js/`):** bind the outside-click/Escape close
+  **once** (guarded by `renderProfileChip._globalBound`); the single handler looks up the
+  **current** `#chipMenu`/`#chipBtn` from the DOM each time and ignores taps inside the menu or
+  on the chip. Also added `e.stopPropagation()` to the menu-item (`[data-act]`) tap handlers.
+  No per-render global listeners any more.
+- **Release:** patch bump to **v1.3.1** - `APP_VERSION` + `sw.js` cache `mathfun-v1.3.1` (so the
+  fix reaches installed PWA users when the new worker activates). README changelog + userguide
+  footer updated; prototype bumped to `1.3.1-proto` to stay in sync; SPEC-tasks status -> v1.3.1.
+- **Verification:** `ui.js` (live + proto) pass diagnostics clean; fix cross-read. Needs Isaac's
+  mobile recheck on Live Server / deployed: open the player menu on a phone and confirm **every**
+  item works (Profile, Theme, Timer/Sound/Music toggles, Rewards, Progress, Switch player), and
+  that tapping outside still closes it.
+
+**To ship:** commit + push the v1.3.1 files (js/app.js, js/ui.js, sw.js, README.md,
+userguide.html, SPEC-tasks.md) once Isaac confirms on mobile. Ideas.md still **In Progress** until
+Isaac's go-ahead.

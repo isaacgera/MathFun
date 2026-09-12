@@ -15,7 +15,7 @@ import { getOperation, OPERATIONS, hintFor } from './operations.js';
 import * as funfacts from './funfacts.js';
 import { getTheme, randomThemeAvatar } from './themes.js';
 
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '1.3.1';
 
 const screens = {
   who: document.getElementById('screen-who'),

@@ -105,6 +105,14 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.3.1 - 12 Sep 2026
+- **Bug fix (mobile):** the player menu (chip, top-right) opened but its items - Profile, Theme,
+  the Timer/Sound/Music toggles, Rewards, Progress, Switch player - couldn't be selected on mobile.
+  The outside-click/Escape close handler was being bound on every header re-render, stacking stale
+  listeners (each capturing an old, replaced menu) that could immediately re-close the freshly
+  opened menu. It's now bound once at the document level and finds the current menu each time, so
+  every menu item works. Also stop event propagation on menu-item taps. Desktop was unaffected.
+
 ### v1.3.0 - 12 Sep 2026
 - **Character themes!** 10 trademark-safe skins (Math World, Plumber World, Dino Valley, Speedy
   Hedgehog, Magic Kingdom, Space Blast, Ocean Deep, Jungle Safari, Candy Land, Robot Lab). Chosen
