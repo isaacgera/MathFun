@@ -1168,3 +1168,49 @@ Diagnostics clean (app.js + styles.css, live + proto). **Needs Isaac's quick rec
 button label via DevTools accessibility pane if handy; footer readable on Candy/Ocean themes), then
 ship v1.3.1. Files to push: styles.css, js/app.js, js/ui.js, sw.js, README.md, userguide.html,
 SPEC-tasks.md, SESSION-LOG.md.
+
+## v1.3.1 shipped & verified - session close - 12 Sep 2026
+v1.3.1 is committed, pushed and live-bound. Full session summary:
+
+**Built this session (v1.3, prototype-first over ~7 rounds, then ported to live):**
+- **10 character themes** (trademark-safe): Math World (default) + Plumber World, Dino Valley,
+  Speedy Hedgehog, Magic Kingdom, Space Blast, Ocean Deep, Jungle Safari, Candy Land, Robot Lab.
+  Chosen at profile creation (Theme step before avatar, live preview) and changeable in-play from
+  the player menu. Each theme drives palette, themed emoji-pattern background, op/tab/hint emoji,
+  its on-theme avatar set, and the music. Layers on top of Light/Dark (each theme has both forms).
+- **Theme-driven avatars** - grid shows the theme's characters (+ neutral fallback); changing
+  theme in-play assigns a random on-theme avatar.
+- **One tune per theme** - a distinct, louder synth tune per theme (limiter bus), across all ops.
+- **App-wide footer** ("Powered by Forje" + copyright) on every screen.
+- **Layout/pickers** - short screens centre; tiles scale up (3x2 on wide); theme/table/avatar
+  pickers show all options without scrolling.
+
+**Post-deploy fixes (all shipped as v1.3.1):**
+- **Mobile bug (z-index):** the header sat at the same z-index as `.app-main`, which painted over
+  the player-menu dropdown and Home button and swallowed taps (theme toggle escaped it via a
+  delegated listener). Fixed: header `z-index:30` > main `1`, modals `50`. This was the real fix
+  for "menu items + Home unclickable on mobile".
+- **Listener hardening:** the menu's outside-click/Escape close is now bound once (not stacked per
+  header re-render).
+- **Accessibility polish:** state-aware theme-toggle label ("Light theme on. Switch to dark
+  theme."); removed footer copy `opacity` to protect contrast on lighter themed backgrounds.
+
+**Git (MathFun's own repo, `origin/main`):** v1.3.0 = `04c183d`; "Mobile Bug" (z-index + SW 1.3.1
++ listener fix + earlier docs) pushed via GitHub Desktop; overview.html = `30ab9ce`; a11y polish =
+**`bd9dc10`** (current HEAD, in sync with origin/main). `prototypes/` is git-ignored (not published).
+
+**Docs synced:** README (v1.3.1 + v1.3.0 changelog, features, layout), userguide (Themes section,
+footer -> v1.3.1), SPEC requirements (R13) / design (sec 14) / tasks (Phase 9, status v1.3.1),
+Ideas.md -> **Built (MathFun v1.3.1)**.
+
+**Also this session:** logged a new backlog idea - **Pre-Live Testing Agent (Kiro agent)** (AI/
+Agents, Simple, status Idea): a read-only agent to audit accessibility/UI gaps across laptop +
+mobile before go-live (sibling to the PWA Readiness Checker) - flagged by Isaac for a later build.
+
+**Verification note:** all code diagnostics clean throughout; Isaac verified on Live Server (laptop)
+and the deployed site incl. **DevTools mobile mode** (menu, Home, themes, footer). As always, a real
+browser/Node can't run in this Windows/Kiro shell, so behavioural checks were Isaac's.
+
+**Status: MathFun v1.3.1 complete, documented, pushed and live-bound. Session closed.**
+Next session ideas (open): optional progress export/import; build the Pre-Live Testing Agent;
+fact-flavoured Daily Challenge questions.
