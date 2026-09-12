@@ -4,8 +4,8 @@
 import { ROUND_SIZE } from './game.js';
 import { BADGES } from './rewards.js';
 import { gridData } from './mastery.js';
-import { AVATARS } from './avatars.js';
 import { OPERATIONS, OP_ORDER, getOperation, LEVEL_LABELS, LEVEL_EMOJI, levelTitle } from './operations.js';
+import { THEMES, THEME_ORDER, getTheme, opEmoji, tabEmoji, themeAvatars } from './themes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -80,9 +80,9 @@ export function modeLabel(mode) {
   if (mode.op === 'challenge' || mode.challenge) return '\uD83C\uDFC6 Daily Challenge';
   const op = getOperation(mode.op);
   if (op.hasTable && mode.difficulty === 'table') {
-    // Multiplication reads "3x table"; division reads "/ 3 table".
+    // Multiplication reads "3× table"; division reads just "÷ 3" (no "table").
     return mode.op === 'div'
-      ? `${op.symbol} ${mode.table} table`
+      ? `${op.symbol} ${mode.table}`
       : `${op.symbol} ${mode.table}\u00D7 table`;
   }
   return `${op.symbol} ${LEVEL_LABELS[mode.difficulty] || ''}`.trim();
@@ -98,16 +98,18 @@ export function showScreen(id) {
   if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: false }); }
 }
 
-// ---- Operations picker (v1.1 + v1.2 Fun Facts / Daily Challenge tiles) ----
-export function renderOperations(container, handlers) {
+// ---- Operations picker (v1.1) ----
+// Four tiles: Addition / Subtraction / Multiplication / Division. Division is "coming soon".
+export function renderOperations(container, handlers, skin = 'math') {
   const tiles = OP_ORDER.map((key) => {
     const op = OPERATIONS[key];
     const soon = !op.playable;
+    const emoji = opEmoji(skin, key, op.emoji); // v1.3: skin-flavoured tile emoji
     return `
       <button class="op-card op-${key} ${soon ? 'coming-soon' : ''}" data-op="${key}"
         ${soon ? 'aria-disabled="true"' : ''}
         title="${soon ? op.name + ' - coming soon' : 'Practise ' + op.name.toLowerCase()}">
-        <span class="op-symbol" aria-hidden="true">${op.emoji}</span>
+        <span class="op-symbol" aria-hidden="true">${emoji}</span>
         <span class="op-name">${op.name}</span>
         ${soon ? '<span class="op-soon">Coming soon</span>' : ''}
       </button>`;
@@ -116,12 +118,12 @@ export function renderOperations(container, handlers) {
   // Fun Facts + Daily Challenge tiles sit alongside the operations (v1.2), making a 2x3 grid.
   const funFactsTile = `
     <button class="op-card op-facts" data-op="facts" title="Read fun facts about numbers">
-      <span class="op-symbol" aria-hidden="true">\uD83C\uDF1F</span>
+      <span class="op-symbol" aria-hidden="true">${tabEmoji(skin, 'facts', '\uD83C\uDF1F')}</span>
       <span class="op-name">Fun Facts</span>
     </button>`;
   const dailyTile = `
     <button class="op-card op-daily" data-op="daily" title="Try a surprise mix of questions!">
-      <span class="op-symbol" aria-hidden="true">\uD83C\uDFC6</span>
+      <span class="op-symbol" aria-hidden="true">${tabEmoji(skin, 'daily', '\uD83C\uDFC6')}</span>
       <span class="op-name">Daily Challenge</span>
     </button>`;
 
@@ -242,7 +244,7 @@ export function renderTableDialog(current, handlers, opKey = 'mul') {
     : 'Pick a number to practise that times table (1\u00D7 to 20\u00D7).';
   host.innerHTML = `
     <div class="modal-backdrop" id="modalBackdrop">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tableDlgTitle">
+      <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="tableDlgTitle">
         <h2 id="tableDlgTitle" tabindex="-1">${dlgTitle}</h2>
         <p class="muted">${dlgHint}</p>
         <div class="table-grid" role="group" aria-label="${isDiv ? 'Choose a number to divide by' : 'Choose a table'}">${tiles}</div>
@@ -256,6 +258,46 @@ export function renderTableDialog(current, handlers, opKey = 'mul') {
     btn.addEventListener('click', () => { const n = Number(btn.dataset.table); close(); handlers.onChoose(n); });
   });
   $('#tableDlgClose', host).addEventListener('click', () => { close(); handlers.onCancel(); });
+  $('#modalBackdrop', host).addEventListener('click', (e) => {
+    if (e.target.id === 'modalBackdrop') { close(); handlers.onCancel(); }
+  });
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { close(); handlers.onCancel(); document.removeEventListener('keydown', esc); }
+  });
+}
+
+// ---- Theme (skin) picker dialog (v1.3) ----
+// A modal grid of the ~10 character themes; picking one fires onChoose(key) immediately.
+export function renderThemeDialog(current, handlers) {
+  const host = document.getElementById('modalHost');
+  const opts = THEME_ORDER.map((key) => {
+    const t = THEMES[key];
+    return `
+      <button type="button" class="theme-opt ${key === current ? 'selected' : ''}" data-skin="${key}"
+        aria-pressed="${key === current}" title="${escapeHtml(t.name)} - ${escapeHtml(t.tagline)}">
+        <span class="theme-opt-emoji" aria-hidden="true">${t.emoji}</span>
+        <span class="theme-opt-meta">
+          <span class="theme-opt-name">${escapeHtml(t.name)}</span>
+          <span class="theme-opt-tag">${escapeHtml(t.tagline)}</span>
+        </span>
+      </button>`;
+  }).join('');
+  host.innerHTML = `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="themeDlgTitle">
+        <h2 id="themeDlgTitle" tabindex="-1">\uD83C\uDFA8 Choose a theme</h2>
+        <p class="muted">Pick a look and sound for your maths adventure.</p>
+        <div class="theme-grid" role="group" aria-label="Choose a theme">${opts}</div>
+        <button class="btn btn-ghost" id="themeDlgClose">Cancel</button>
+      </div>
+    </div>`;
+  const close = () => { host.innerHTML = ''; };
+  const title = host.querySelector('#themeDlgTitle');
+  if (title) title.focus();
+  host.querySelectorAll('.theme-opt').forEach((btn) => {
+    btn.addEventListener('click', () => { const key = btn.dataset.skin; close(); handlers.onChoose(key); });
+  });
+  $('#themeDlgClose', host).addEventListener('click', () => { close(); handlers.onCancel(); });
   $('#modalBackdrop', host).addEventListener('click', (e) => {
     if (e.target.id === 'modalBackdrop') { close(); handlers.onCancel(); }
   });
@@ -365,21 +407,22 @@ export function clearHint(container) {
 }
 
 // Show the animated "Need a Hint?" button. onReveal is called when tapped.
-export function showHintButton(container, onReveal) {
+// icon defaults to a bulb but is skin-flavoured (v1.3).
+export function showHintButton(container, onReveal, icon = '\uD83D\uDCA1') {
   const zone = $('#hintZone', container);
   if (!zone) return;
   zone.innerHTML = `
     <button type="button" class="hint-btn" id="hintBtn" title="Show a hint to help you">
-      \uD83D\uDCA1 Need a Hint?
+      ${icon} Need a Hint?
     </button>`;
   $('#hintBtn', zone).addEventListener('click', onReveal);
 }
 
-// Replace the button with the actual hint text.
-export function showHintText(container, text) {
+// Replace the button with the actual hint text (skin-flavoured icon, v1.3).
+export function showHintText(container, text, icon = '\uD83D\uDCA1') {
   const zone = $('#hintZone', container);
   if (!zone) return;
-  zone.innerHTML = `<div class="hint-text" role="status">\uD83D\uDCA1 ${escapeHtml(text)}</div>`;
+  zone.innerHTML = `<div class="hint-text" role="status">${icon} ${escapeHtml(text)}</div>`;
 }
 
 export function setTimerVisible(container, visible) {
@@ -413,7 +456,9 @@ export function renderResults(container, data, handlers) {
   $('#homeBtn', container).addEventListener('click', handlers.onHome);
 }
 
-// ---- Progress (operation-aware, v1.2) ----
+// ---- Progress (operation-aware) ----
+// Multiplication -> the A x B mastery grid. Addition/Subtraction/Division -> a summary
+// of rounds played, best score per level, and accuracy (SPEC R11.9).
 // Per-operation label for a level (division's "table" reads "Pick a number").
 function levelBestLabel(opKey, lvl) {
   if (lvl === 'table') return opKey === 'div' ? 'Pick a number' : 'Pick a table';
@@ -561,11 +606,14 @@ export function renderRewards(container, state, handlers) {
 }
 
 // ---- Profile setup (create / edit) ----
-// CREATE: a stepped wizard, one thing at a time -> Name, Gender, Age, Avatar.
+// CREATE: a stepped wizard, one thing at a time -> Name, Gender, Age, Theme, Avatar (v1.3).
 // canCancel: show a Cancel/Back on the first step (when other profiles exist).
 export function renderSetup(container, { canCancel = false }, handlers) {
-  const draft = { name: '', gender: null, age: null, avatar: null }; // no defaults; user must choose
-  const steps = ['name', 'gender', 'age', 'avatar'];
+  // v1.3: `skin` defaults to 'math' (Math World) so there's always a valid theme; the
+  // child can change it on the Theme step (and any time later from the menu).
+  // Theme comes BEFORE avatar so the avatar grid can show the chosen theme's characters (v1.3).
+  const draft = { name: '', gender: null, age: null, avatar: null, skin: 'math' };
+  const steps = ['name', 'gender', 'age', 'theme', 'avatar'];
   let step = 0;
 
   const stepDots = () => `<div class="wiz-dots" aria-hidden="true">${
@@ -598,19 +646,41 @@ export function renderSetup(container, { canCancel = false }, handlers) {
         </div>`;
     }
     if (steps[step] === 'age') {
+      // No default - the child must enter an age (blank box until they do).
       return `
         <div class="field">
           <span>How old are you?</span>
           ${ageStepperMarkup(draft.age)}
         </div>`;
     }
-    const avatarGrid = AVATARS.map((a) => `
-      <button type="button" class="avatar-opt ${a === draft.avatar ? 'selected' : ''}" data-av="${a}"
-        aria-pressed="${a === draft.avatar}" aria-label="Avatar ${a}" title="Choose this avatar">${a}</button>`).join('');
+    if (steps[step] === 'avatar') {
+      // v1.3: characters come from the chosen theme (theme step precedes this one).
+      const avatarGrid = themeAvatars(draft.skin).map((a) => `
+        <button type="button" class="avatar-opt ${a === draft.avatar ? 'selected' : ''}" data-av="${a}"
+          aria-pressed="${a === draft.avatar}" aria-label="Avatar ${a}" title="Choose this avatar">${a}</button>`).join('');
+      return `
+        <div class="field">
+          <span>Pick your character</span>
+          <div class="avatar-grid" role="group" aria-label="Choose an avatar">${avatarGrid}</div>
+        </div>`;
+    }
+    // Theme (skin) step (v1.3): an inline grid of the ~10 themes; selecting previews it live.
+    const themeGrid = THEME_ORDER.map((key) => {
+      const t = THEMES[key];
+      return `
+        <button type="button" class="theme-opt ${key === draft.skin ? 'selected' : ''}" data-skin="${key}"
+          aria-pressed="${key === draft.skin}" title="${escapeHtml(t.name)} - ${escapeHtml(t.tagline)}">
+          <span class="theme-opt-emoji" aria-hidden="true">${t.emoji}</span>
+          <span class="theme-opt-meta">
+            <span class="theme-opt-name">${escapeHtml(t.name)}</span>
+            <span class="theme-opt-tag">${escapeHtml(t.tagline)}</span>
+          </span>
+        </button>`;
+    }).join('');
     return `
       <div class="field">
-        <span>Pick your character</span>
-        <div class="avatar-grid" role="group" aria-label="Choose an avatar">${avatarGrid}</div>
+        <span>Pick a theme</span>
+        <div class="theme-grid" role="group" aria-label="Choose a theme">${themeGrid}</div>
       </div>`;
   }
 
@@ -640,6 +710,19 @@ export function renderSetup(container, { canCancel = false }, handlers) {
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); next(); } });
     } else if (steps[step] === 'age') {
       wireAgeStepper(container, draft.age, (v) => { draft.age = v; });
+    } else if (steps[step] === 'theme') {
+      // Selecting a theme updates the draft and previews it live (via the optional handler).
+      container.querySelectorAll('.theme-opt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          draft.skin = btn.dataset.skin;
+          container.querySelectorAll('.theme-opt').forEach((b) => {
+            const on = b === btn;
+            b.classList.toggle('selected', on);
+            b.setAttribute('aria-pressed', on);
+          });
+          handlers.onPreviewSkin?.(draft.skin);
+        });
+      });
     } else {
       const map = { gender: ['gender-opt', 'gender', 'gender'], avatar: ['avatar-opt', 'av', 'avatar'] };
       const [cls, dataKey, field] = map[steps[step]];
@@ -678,6 +761,7 @@ export function renderSetup(container, { canCancel = false }, handlers) {
       gender: draft.gender,
       age: Number(draft.age),
       avatar: draft.avatar,
+      skin: draft.skin || 'math',
     });
   }
 
@@ -705,7 +789,11 @@ export function renderSetup(container, { canCancel = false }, handlers) {
 // summary into all-fields-at-once editing (name, gender, age, avatar) with Save/Cancel.
 export function renderProfileSummary(container, profile, handlers) {
   let editing = false;
-  const draft = { name: profile.name, gender: profile.gender || 'boy', age: profile.age, avatar: profile.avatar };
+  // Seed the skin from the profile so the edit avatar grid shows this theme's characters (v1.3).
+  const draft = {
+    name: profile.name, gender: profile.gender || 'boy', age: profile.age,
+    avatar: profile.avatar, skin: (profile.progress && profile.progress.settings && profile.progress.settings.skin) || 'math',
+  };
 
   const genderWord = (g) => (g === 'girl' ? 'Girl' : g === 'boy' ? 'Boy' : '\u2014');
   const genderEmoji = (g) => (g === 'girl' ? '\uD83D\uDC67' : '\uD83D\uDC66');
@@ -733,7 +821,7 @@ export function renderProfileSummary(container, profile, handlers) {
   }
 
   function renderEdit() {
-    const avatarGrid = AVATARS.map((a) => `
+    const avatarGrid = themeAvatars(draft.skin).map((a) => `
       <button type="button" class="avatar-opt ${a === draft.avatar ? 'selected' : ''}" data-av="${a}"
         aria-pressed="${a === draft.avatar}" aria-label="Avatar ${a}" title="Choose this avatar">${a}</button>`).join('');
     container.innerHTML = `
@@ -833,7 +921,7 @@ export function renderProfileChip(profile, handlers, settings = {}) {
   if (!profile) { host.innerHTML = ''; host.classList.add('hidden'); return; }
   host.classList.remove('hidden');
   // Sound & Music controls now live in this menu (v1.2), just after Profile.
-  // Compact: three across, each an icon with its toggle switch below.
+  // Compact: three across, each an icon with its toggle switch below (v1.2 round 3).
   const menuSwitch = (id, label, icon, on) => `
     <div class="menu-toggle" role="menuitemcheckbox" aria-checked="${on}" title="${label}">
       <span class="menu-toggle-icon" aria-hidden="true">${icon}</span>
@@ -852,6 +940,7 @@ export function renderProfileChip(profile, handlers, settings = {}) {
     </button>
     <div class="chip-menu" id="chipMenu" role="menu" hidden>
       <button role="menuitem" data-act="profile">\uD83D\uDC64 Profile</button>
+      <button role="menuitem" data-act="theme">\uD83C\uDFA8 Theme <span class="menu-theme-current">${escapeHtml(getTheme(settings.skin).name)}</span></button>
       <div class="chip-menu-section" role="group" aria-label="Sound and music">
         ${menuSwitch('timedToggle', 'Timer', '\u23F1\uFE0F', !!settings.timed)}
         ${menuSwitch('soundToggle', 'Sound', '\uD83D\uDD0A', !!settings.sound)}
@@ -872,7 +961,7 @@ export function renderProfileChip(profile, handlers, settings = {}) {
     btn.setAttribute('aria-expanded', String(open));
   };
   btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
-  // Menu items that navigate (Profile/Rewards/etc.) close the menu and fire their handler.
+  // Menu items that navigate (Profile/Theme/Rewards/etc.) close the menu and fire their handler.
   menu.querySelectorAll('[data-act]').forEach((mi) => {
     mi.addEventListener('click', () => { close(); handlers[mi.dataset.act]?.(); });
   });

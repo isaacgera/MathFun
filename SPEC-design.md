@@ -1,6 +1,6 @@
 ﻿# MathFun - Design
 
-- **Category:** Learning | **Tier:** Simple | **Status:** Shipped v1.2.0 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge)
+- **Category:** Learning | **Tier:** Simple | **Status:** Shipped v1.3.0 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes)
 - **Stack:** Vanilla HTML/CSS/JS, no build step. **Platform:** mobile-first installable PWA.
 - **Licence:** MIT. **Live:** https://isaacgera.github.io/MathFun/
 
@@ -289,6 +289,62 @@ brand wordmark hides (the clickable logo mark stays), keeping everything on one 
 `APP_VERSION` 1.2.0; `sw.js` VERSION 1.2.0 (cache `mathfun-v1.2.0`) with `funfacts.js` added to the
 precache; manifest description updated. Storage stays `mathfun_` (schema-3 migration unchanged -
 no data loss; multiplication mastery/bests preserved, new counters start at 0).
+
+## 14. v1.3 - Character themes + footer (shipped v1.3.0)
+Built prototype-first (`1.3.0-proto`), then ported to the app root. Preserves the shipped
+`mathfun_` storage, **app-level light/dark theme** and network-first SW; adds the following.
+
+### 14.1 Themes registry (themes.js)
+New module: 10 trademark-safe themes (`math` default + plumber/dino/hedgehog/magic/space/ocean/
+jungle/candy/robot). Each declares a display name, emoji, tagline, `tune` key, per-op tile emoji
+(`ops`), Fun Facts/Daily Challenge tab emoji (`tabs`), a `hintIcon`, and an on-theme `avatars`
+array. Helpers: `getTheme`, `opEmoji`, `tabEmoji`, `hintIcon`, `themeAvatars` (own + neutral
+`FALLBACK_AVATARS`, de-duped), `randomThemeAvatar(key, avoid)`.
+
+### 14.2 Skin as a parallel axis (styles.css)
+Applied via **`data-skin="<key>"` on `<html>`**, independent of `data-theme="light|dark"`. Each
+skin re-points the core palette tokens (`--brand/--brand-2/--accent/--bg/--surface/--surface-2/
+--border`) + a `--skin-bg` page background and a `--skin-pattern` (an inline SVG emoji tile,
+offline). Because skins only change token VALUES, the light/dark blocks still layer on top - dark
+re-darkens surfaces after the skin sets accents, so every theme has a light and a dark form.
+
+### 14.3 Per-profile skin (state.js)
+`settings.skin` (default `'math'`), per profile, with `getSkin`/`setSkin`. `newProfile` carries a
+chosen skin; `resetActiveProgress` preserves it. `fillDefaults` backfills `skin:'math'` for existing
+profiles and through the schema-2->3 migration - **no data loss**. The **app-level light/dark
+theme** (`store.theme` + `getTheme`/`setTheme`) is unchanged (v1.0.5 guard preserved).
+
+### 14.4 Apply + change (app.js)
+`applySkin(key)` sets `data-skin`, calls `sound.setThemeTune(key)` and updates the PWA theme-color
+meta. Applied on **boot** (Math World before any profile, since `getSkin()` returns defaults),
+on **profile choose**, and **live** via `openThemePicker` (menu). Picking a theme in-play also
+assigns a random on-theme avatar, restarts the theme's music, and calls `refreshCurrentScreen()`
+(which is a **no-op while the Play screen is active**, so a live round is never dropped).
+
+### 14.5 Theme picker (ui.js)
+Create wizard steps are now **name -> gender -> age -> theme -> avatar** (theme before avatar so
+the avatar grid shows that theme's characters; `onPreviewSkin` previews live). A `renderThemeDialog`
+modal is opened from the player-menu **Theme** item. Avatar grids (create + edit) use
+`themeAvatars(skin)`.
+
+### 14.6 One tune per theme (sound.js)
+The per-context `TUNES` + flavour layer is replaced by **one composed tune per theme** (distinct
+melody/bass/waveform/tempo), played across all operations while that theme is active. Routed through
+a dedicated gain + `DynamicsCompressor` **limiter bus** with a high `MASTER` so it's clearly audible
+without clipping. `setThemeTune(key)` switches live; `startMusic()` ignores its arg (theme decides).
+
+### 14.7 Footer + layout
+An app-wide `<footer class="app-footer">` ("Powered by Forje" + copyright) sits outside `<main>`,
+shown on every screen. Short screens centre in the viewport; tiles scale up on tablet/laptop
+(option tiles 3x2 on wide screens); the theme/table(1-20)/avatar pickers are responsive
+(`.modal-wide`, auto-fit grids) so all options show without scrolling; `.chip-menu` uses
+`overflow: hidden auto` so items never clip.
+
+### 14.8 Versioning (shipped)
+`APP_VERSION` 1.3.0; `sw.js` VERSION 1.3.0 (cache `mathfun-v1.3.0`) with `themes.js` added to the
+precache; manifest description updated. Storage stays `mathfun_`; the top-right header cluster
+(theme toggle + `headerHomeBtn` + profile chip) was ported carefully - `headerHomeBtn` id kept to
+avoid the historical clash with the Results screen's `homeBtn`.
 
 ## Deferred to later versions
 Number-pad/typed input, progress export/import, cloud sync, leaderboards, more fact-flavoured

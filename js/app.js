@@ -13,8 +13,9 @@ import * as sound from './sound.js';
 import * as ui from './ui.js';
 import { getOperation, OPERATIONS, hintFor } from './operations.js';
 import * as funfacts from './funfacts.js';
+import { getTheme, randomThemeAvatar } from './themes.js';
 
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.3.0';
 
 const screens = {
   who: document.getElementById('screen-who'),
@@ -75,6 +76,17 @@ function resetTo(name) {
   navigate(name, { replace: true });
 }
 
+// Re-render whatever screen is currently shown, without touching history (v1.3). Used after
+// an in-play theme change so themed content (tiles, emoji, background) updates immediately.
+// IMPORTANT: the Play screen is NOT a route - during a round `currentRoute` still points at
+// the screen we came from (usually 'home'), so re-running it would yank the player OFF a live
+// round back to the Mode screen. So while a round is active we skip the re-render entirely;
+// the palette/background still update live via the data-skin attribute.
+function refreshCurrentScreen() {
+  if (screens.play.classList.contains('is-active')) return; // mid-round: never rebuild off the play screen
+  if (currentRoute && routes[currentRoute]) routes[currentRoute]();
+}
+
 // ---------- Theme (app-level, two-way Light <-> Dark) ----------
 // Always applies an explicit data-theme so the result never depends on the OS after first use.
 function osPrefersDark() {
@@ -93,6 +105,26 @@ function cycleTheme() {
   state.setTheme(next);
   applyTheme(next);
   updateThemeButton(next);
+  updateMetaThemeColor(); // surfaces changed; keep the PWA theme-color in step
+}
+
+// ---------- Character theme / skin (v1.3, a parallel axis to Light<->Dark) ----------
+// Sets data-skin on <html> so the per-skin CSS palette + background applies, points the
+// synth music at this skin's tune, and updates the theme-colour meta for PWA UI.
+function applySkin(skinKey) {
+  const theme = getTheme(skinKey);
+  document.documentElement.setAttribute('data-skin', theme.key);
+  sound.setThemeTune(theme.key);       // one tune per theme; switches live if music is on
+  updateMetaThemeColor();
+  return theme;
+}
+
+// Keep the browser/PWA theme-color meta in step with the active skin's brand colour.
+function updateMetaThemeColor() {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  const brand = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim();
+  if (brand) meta.setAttribute('content', brand);
 }
 function updateThemeButton(theme) {
   const btn = document.getElementById('themeToggle');
@@ -118,6 +150,7 @@ function updateHeader() {
   const s = state.getState();
   ui.renderProfileChip(p, {
     profile: () => navigate('editProfile'),
+    theme: openThemePicker, // v1.3: change character theme in-play
     rewards: () => navigate('rewards'),
     progress: () => navigate('progress'),
     help: () => navigate('help'),
@@ -125,7 +158,7 @@ function updateHeader() {
     // Sound & Music controls (v1.2) live in the chip menu now.
     onTimed: (v) => state.updateSettings({ timed: v }),
     onSound: (v) => { state.updateSettings({ sound: v }); if (v) sound.unlock(); },
-    onMusic: (v) => { state.updateSettings({ music: v }); v ? sound.startMusic(lastTune) : sound.stopMusic(); },
+    onMusic: (v) => { state.updateSettings({ music: v }); v ? sound.startMusic() : sound.stopMusic(); },
   }, s.settings);
 }
 
@@ -163,7 +196,12 @@ function renderWhoPlaying() {
 function showSetup({ canCancel }) {
   ui.renderSetup(screens.setup, { canCancel }, {
     onSave: (data) => { state.createProfile(data); afterProfileChosen(); },
-    onCancel: () => (state.activeProfile() ? resetTo('ops') : resetTo('who')),
+    onCancel: () => {
+      applySkin(state.getSkin()); // restore the real skin if a preview changed it
+      state.activeProfile() ? resetTo('ops') : resetTo('who');
+    },
+    // v1.3: preview a theme live as the child taps it on the Theme step.
+    onPreviewSkin: (skinKey) => applySkin(skinKey),
   });
   ui.showScreen('screen-setup');
   updateHeader();
@@ -178,7 +216,7 @@ function renderEditProfile() {
     onSave: (data) => {
       state.updateProfile(profile.id, data);
       const s = state.getState();
-      if (s.settings.music) sound.startMusic(lastTune); else sound.stopMusic();
+      if (s.settings.music) sound.startMusic(); else sound.stopMusic();
       goBack();
     },
     onDelete: () => {
@@ -195,17 +233,36 @@ function renderEditProfile() {
 function afterProfileChosen() {
   applyTheme(state.getTheme());
   updateThemeButton(state.getTheme());
-  playTune('mul'); // land on the home/picker with the default jolly tune (if music is on)
+  applySkin(state.getSkin());  // v1.3: apply this profile's chosen character theme
+  playTune(); // land on the home/picker with this theme's tune (if music is on)
   resetTo('ops');
 }
 
-// ---------- Per-context music (v1.2) ----------
-// Each operation, Fun Facts and the Daily Challenge get their own jolly theme. Only plays
-// when the player has Music on. lastTune is remembered so the Music toggle can resume it.
-let lastTune = 'mul';
-function playTune(tuneKey) {
-  lastTune = tuneKey || lastTune;
-  if (state.getState().settings.music) sound.startMusic(lastTune);
+// ---------- Change the character theme in-play (v1.3) ----------
+// Opens the theme picker dialog; on choose, saves + applies the new skin live, assigns a
+// random on-theme avatar, restarts the theme's music, and re-renders the current screen.
+function openThemePicker() {
+  ui.renderThemeDialog(state.getSkin(), {
+    onChoose: (skinKey) => {
+      state.setSkin(skinKey);
+      // Auto-assign a random on-theme avatar so the character matches the new theme.
+      const p = state.activeProfile();
+      if (p) state.updateProfile(p.id, { avatar: randomThemeAvatar(skinKey, p.avatar) });
+      applySkin(skinKey);            // data-skin -> live palette + background; setThemeTune swaps the tune live
+      if (state.getState().settings.music) { sound.unlock(); sound.startMusic(); }
+      updateHeader();                // reflect the new avatar + skin label in the chip menu
+      refreshCurrentScreen();        // re-render themed content (tiles/emoji/bg) - skipped mid-round
+    },
+    onCancel: () => {},
+  });
+}
+
+// ---------- Background music (v1.3: ONE tune per theme) ----------
+// The tune is chosen by the active THEME (via applySkin -> sound.setThemeTune), not by the
+// operation/context. playTune() just starts/stops per the Music setting; its argument is
+// ignored and kept only for call-site compatibility.
+function playTune(_contextKey) {
+  if (state.getState().settings.music) sound.startMusic();
   else sound.stopMusic();
 }
 
@@ -219,7 +276,7 @@ function renderOperationsScreen() {
     onPick: (opKey) => { state.setOperation(opKey); playTune(opKey); navigate('home'); },
     onFunFacts: () => navigate('funfacts'),
     onDailyChallenge: startDailyChallenge,
-  });
+  }, state.getSkin());
   updateHeader();
   ui.showScreen('screen-ops');
 }
@@ -338,13 +395,14 @@ function clearHintTimer() {
 function scheduleHint() {
   clearHintTimer();
   if (state.getState().settings.timed) return; // timed mode has its own pressure; no hint
+  const hintEmoji = getTheme(state.getSkin()).hintIcon; // v1.3: skin-flavoured hint icon
   hintTimerId = setTimeout(() => {
     if (!round || round.isAnswered) return;
     ui.showHintButton(screens.play, () => {
       if (!round || !round.current) return;
       const opKey = round.current.op || round.mode.op;
-      ui.showHintText(screens.play, hintFor(round.current, opKey));
-    });
+      ui.showHintText(screens.play, hintFor(round.current, opKey), hintEmoji);
+    }, hintEmoji);
   }, HINT_DELAY_MS);
 }
 
@@ -465,6 +523,7 @@ document.addEventListener('click', (e) => {
 function init() {
   applyTheme(state.getTheme());
   updateThemeButton(state.getTheme());
+  applySkin(state.getSkin());  // v1.3: Math World before any profile; the profile's skin once chosen
   // Theme toggle handled by the delegated document click listener above (single binding).
   document.getElementById('headerHomeBtn')?.addEventListener('click', () => resetTo('ops'));
   document.getElementById('helpBack')?.addEventListener('click', goBack);

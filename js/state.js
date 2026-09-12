@@ -61,6 +61,9 @@ function defaultProgress() {
       timed: false,
       sound: true,
       music: true, // v1.2: music plays by default when a player lands
+      // v1.3: character theme (skin) - per-profile, a parallel axis to the app-level
+      // light/dark theme. Defaults to 'math' (Math World), shown before profile creation.
+      skin: 'math',
     },
     ops: defaultOps(),
     longestStreak: 0,                          // best in-round streak (profile-level)
@@ -69,7 +72,9 @@ function defaultProgress() {
   };
 }
 
-function newProfile({ name, avatar, age, gender }) {
+function newProfile({ name, avatar, age, gender, skin }) {
+  const progress = defaultProgress();
+  if (skin) progress.settings.skin = skin; // v1.3: carry the chosen theme into the profile
   return {
     id: 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     name: name || 'Player',
@@ -77,7 +82,7 @@ function newProfile({ name, avatar, age, gender }) {
     age: age || 8,
     gender: gender || null, // 'boy' | 'girl' | null
     createdISO: new Date().toISOString(),
-    progress: defaultProgress(),
+    progress,
   };
 }
 
@@ -304,7 +309,7 @@ export function resetActiveProgress() {
   if (!p) return;
   const keep = p.progress.settings;
   p.progress = defaultProgress();
-  p.progress.settings = { ...p.progress.settings, sound: keep.sound, music: keep.music, timed: keep.timed };
+  p.progress.settings = { ...p.progress.settings, sound: keep.sound, music: keep.music, timed: keep.timed, skin: keep.skin };
   save();
 }
 
@@ -318,6 +323,18 @@ export function setTheme(theme) {
   s.theme = theme;
   save();
   return theme;
+}
+
+// ----- character theme / skin (v1.3, per-profile) -----
+// The active skin key. Before any profile exists getState() returns defaults, so this
+// yields 'math' (Math World) - exactly the theme we want on the who/create screens.
+export function getSkin() {
+  return getState().settings.skin || 'math';
+}
+
+// Persist the chosen skin for the active profile (no-op if none active yet).
+export function setSkin(skinKey) {
+  return updateSettings({ skin: skinKey });
 }
 
 // ----- per-operation progress (v1.1) -----

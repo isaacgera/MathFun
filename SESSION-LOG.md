@@ -725,3 +725,363 @@ visual tweaks followed, done straight-to-main (CSS-only, low risk) and shipped a
   tightens so the header still fits on one line.
 - Version: `APP_VERSION` + `sw.js` cache -> **1.2.1**; README changelog + userguide footer updated.
 - Isaac verified the tweaks on Live Server before the bump. Diagnostics clean.
+
+## v1.3 prototype - character themes + theme-driven avatars + app footer - 12 Sep 2026
+Started the "make it more fun" batch **prototype-first** in `prototypes/` (version
+`1.3.0-proto`, storage `mathfunproto_`, banner). **The shipped app at the root is untouched at
+v1.2.1** and only changes after Isaac tests, signs off, and we port in one pass.
+
+**Mode:** Quick Spec / Spec-ish (multi-behaviour on a shipped app: new data-model field +
+new picker screen/dialog + cross-cutting appearance/sound change). Build-standards flags
+unchanged: Simple-tier rigour, vanilla no-build stack, mobile-first PWA.
+
+**Naming decision (agreed with Isaac):** character themes use **original, trademark-safe**
+names/vibes (palettes + emoji + synth music only) - no copyrighted names, characters, logos
+or assets. Keeps the door open on the monetization-watch rule; rename freely for personal use.
+
+**What was built (all in `prototypes/`):**
+
+1. **New `themes.js`** - the single source of truth for ~10 skins. Each declares a display
+   name, emoji, tagline, a `tune` flavour key, per-operation tile emoji (`ops`), Fun Facts +
+   Daily Challenge tab emoji (`tabs`), a `hintIcon`, and an on-theme `avatars` array.
+   Themes: **Math World** (default: maths symbols/operations, loads before any profile),
+   **Plumber World**, **Dino Valley**, **Speedy Hedgehog**, **Magic Kingdom**, **Space Blast**,
+   **Ocean Deep**, **Jungle Safari**, **Candy Land**, **Robot Lab**. Helpers: `getTheme`,
+   `opEmoji`, `tabEmoji`, `hintIcon`, `themeAvatars` (theme set + neutral fallback, de-duped).
+
+2. **Skin as a parallel axis to Light/Dark.** Applied via **`data-skin="<key>"` on `<html>`**,
+   independent of the existing `data-theme="light|dark"`. `styles.css` gained a per-skin token
+   block (re-points `--brand/--brand-2/--accent/--bg/--surface/--surface-2/--border` + a new
+   `--skin-bg` page background). Because skins only change token *values*, the Light/Dark blocks
+   still layer on top - so **every skin has a light and a dark form** (the dark block re-darkens
+   surfaces after the skin sets its accents). Page background now uses `--skin-bg` (fixed).
+
+3. **Theme drives appearance + sound + icons + hints:** palette, home/all-screen background,
+   operation tiles, Fun Facts/Daily Challenge tab emoji, the "Need a Hint?" icon, and the music
+   flavour all follow the active skin.
+
+4. **`sound.js` per-theme flavour.** Added `THEME_FLAVOURS` (per skin: lead waveform, tempo
+   multiplier, semitone transpose, hi-hat on/off) applied **on top of** the existing per-context
+   tunes (mul/add/sub/div/facts/daily) - so the same context melody sounds distinct per skin.
+   New `setThemeTune(themeKey)` (restarts current tune live so tempo/flavour apply immediately)
+   and `restartCurrent()`. No audio files - still pure synth WebAudio.
+
+5. **`state.js`** - added per-profile **`settings.skin`** (default `'math'`), with `getSkin()` /
+   `setSkin()`. `newProfile` carries the chosen skin; `resetActiveProgress` preserves it.
+   `fillDefaults` backfills `skin:'math'` for existing profiles and through the schema-2->3
+   migration path, so **no data loss** - old profiles simply get Math World.
+
+6. **`app.js`** - `applySkin(skinKey)` sets `data-skin`, points the music at the skin's flavour,
+   and updates the PWA `theme-color` meta to the skin's brand colour. Applied on **boot**
+   (Math World before any profile exists, since `getSkin()` returns defaults when no active
+   profile), on **profile choose** (`afterProfileChosen`), and **live** in-play via the menu.
+   `openThemePicker()` opens the dialog and applies + persists the choice immediately.
+
+7. **Theme picker (two places):**
+   - **Create-profile wizard:** a new **Theme step**, and the wizard order is now
+     **Name -> Gender -> Age -> Theme -> Avatar** (theme before avatar so the avatar grid shows
+     that theme's characters). Selecting a theme **previews it live** (`onPreviewSkin`); cancelling
+     restores the real skin.
+   - **Player menu (in-play):** a **"Theme <current>"** launcher opens the same picker dialog;
+     choosing applies live and restarts the current context's music in the new flavour.
+
+8. **Theme-driven avatars** (Isaac's follow-up - profiles kept as-is; only the *avatar* choices
+   became theme-based). The avatar step (create) and the edit view now show
+   **`themeAvatars(skin)`** = that theme's ~10 on-theme characters **plus a small neutral fallback
+   row** (smiley/cool/cat/dog/star), de-duplicated - so it's always on-theme but never thin.
+   Edit seeds the skin from `profile.progress.settings.skin`. Removed the now-unused `AVATARS`
+   import from `ui.js` (the fixed set in `avatars.js` stays for `randomAvatar`).
+
+9. **App footer on every screen** - `index.html` gained a persistent `<footer class="app-footer">`
+   (outside `<main>`, so it shows on all screens): **"Powered by Forjé"** + **"© 2026 Nathan J
+   Gera. All rights reserved."** Styled with theme tokens; compact on mobile.
+
+**Also:** `APP_VERSION` -> `1.3.0-proto`; `sw.js` VERSION -> `1.3.0-proto`
+(cache `mathfun-proto-1.3.0-proto`) with `./js/themes.js` added to precache; index.html Help copy
+now explains themes.
+
+**Verification note:** as usual this Windows/Kiro shell can't run Node or a browser (and
+`grep_search` doesn't reach this OneDrive path - confirmed again), so code was cross-checked by
+reading every consumer of the changed/added APIs and running diagnostics. **All 8 changed/created
+files pass with zero errors** (themes.js, app.js, ui.js, state.js, sound.js, sw.js, index.html,
+styles.css). **Needs Isaac's manual Live Server pass** of `prototypes/` before we port.
+
+**Isaac's Live Server checklist (test the prototype, http not file://):**
+1. Serve `Learning/MathFun/prototypes/`; open the URL. (Sandbox `mathfunproto_` data, separate from live.)
+2. **Default theme:** on the "Who's playing?" / create screens (before a profile exists) the app
+   shows **Math World** (maths-symbol palette + faint symbol wash).
+3. **Create a profile:** the wizard now goes Name -> Gender -> Age -> **Theme** -> **Avatar**.
+   - On the Theme step, tapping a theme **previews it live** (colours + background change at once).
+   - On the Avatar step, the characters shown are **that theme's** set (e.g. Dino Valley = dinos),
+     with a small neutral row at the end. Pick one and finish.
+4. **Themes change everything:** once playing, confirm the chosen theme changes the palette,
+   the page background, the operation tiles' emoji, the Fun Facts + Daily Challenge tile emoji,
+   the "Need a Hint?" icon (untimed, after ~7s), and the **music flavour** (turn Music on).
+5. **Change theme in-play:** open the player menu (top-right) -> **Theme** -> pick another -> it
+   applies instantly and the music switches flavour. The menu shows the current theme's name.
+6. **Light/Dark still works on top:** toggle the header Light/Dark on a few different themes -
+   each skin should have a sensible light and dark form; the toggle works on **every** screen incl.
+   before a profile (the v1.0.5 guard).
+7. **Footer:** "Powered by Forjé" + "© 2026 Nathan J Gera. All rights reserved." shows at the
+   bottom of **every** screen (and reads fine in light and dark).
+8. **Data safety / migration:** if you already had prototype data, confirm existing profiles still
+   load with their progress intact and simply default to Math World (new `skin` field backfilled).
+9. **General regression:** Add/Sub/Mul/Div play; Division "Pick a number"; Fun Facts; Daily
+   Challenge; My Progress overview + detail; Timer/Sound/Music in the menu; keyboard 1-4;
+   2x3 tiles + single-line mobile header still hold.
+
+**Pending (next steps):** Isaac verifies -> then **port to the live app** (version -> 1.3.0, cache
+`mathfun-v1.3.0`, storage stays `mathfun_` preserving the shipped app-level Light/Dark theme +
+schema-3 migration, precache `themes.js`, README changelog + userguide + SPEC docs, footer into the
+production index.html, Ideas.md -> Built (MathFun v1.3.0), deploy + verify). `Ideas.md` row is
+currently **In Progress (MathFun v1.3, from v1.2.1)**.
+
+### v1.3 prototype - round 2 fixes (Isaac's first-test feedback) - 12 Sep 2026
+Four fixes after Isaac tested the `1.3.0-proto` themes build via Live Server. Still
+**prototype-only** (`prototypes/`, `1.3.0-proto`); the shipped app stays at v1.2.1.
+
+1. **Themed backgrounds (was plain/empty).** Added a fixed, non-interactive `body::before`
+   decorative layer carrying a large, faint, tiled **emoji pattern per skin** via an inline
+   **SVG data-URI** (`--skin-pattern`) - fully offline, no image files, trademark-safe. Each
+   skin got a pattern of its own characters (Dino Valley = dino/volcano/palm/egg; Ocean Deep =
+   fish/octopus/whale/wave; Space = rocket/planet/alien/comet; etc.), plus richer `--skin-bg`
+   gradients. Content layers (`.app-header/.app-main/.app-footer/#modalHost`) pinned to
+   `z-index:1` above the pattern; pattern opacity dialled down in dark mode; honours
+   reduced-motion. Math World now has a light maths-symbol pattern too (no longer empty).
+2. **Music now clearly changes per theme.** The per-theme flavour spread in `sound.js`
+   `THEME_FLAVOURS` was too subtle - widened it a lot: bigger tempo range (0.68-1.35x) and full
+   **octave-scale transposes** (semis -12..+12) plus distinct lead waveforms, so each skin's tune
+   is obviously different (e.g. Dino = slow, an octave down, sawtooth; Hedgehog = fast, bright;
+   Ocean = slow, smooth, lower; Candy = high + fast).
+3. **Theme now reflects mid-play.** The palette was already live (data-skin on `<html>`), but the
+   change wasn't noticeable on the play screen and the music wasn't reliably switching. Fixed the
+   in-play flow in `openThemePicker`: ensure music is playing the current context tune first (if
+   Music is on), THEN `applySkin()` swaps the flavour live (setThemeTune restarts it). Combined
+   with the new background pattern, a mid-play theme change is now visible AND audible immediately
+   (no need to go Home).
+4. **Division "Pick a number" label.** `modeLabel` for division's table mode now reads just
+   `÷ N` (dropped the trailing "table"); multiplication still reads `N× table`.
+
+**Verification:** all touched files (styles.css, sound.js, app.js, ui.js) pass diagnostics with
+zero errors; logic cross-read. The Windows/Kiro shell still can't run a browser here, so **needs
+Isaac's Live Server recheck** of these four, then we continue toward the port. Prototype remains
+`1.3.0-proto`.
+
+**Recheck checklist:** (a) each theme shows a distinct faint emoji-pattern background (light +
+dark); (b) turn Music on and switch themes - the tune clearly changes character/speed/pitch;
+(c) change theme from the player menu **mid-round** - colours, background and music all update
+without leaving the play screen; (d) Division -> Pick a number -> play: the top tag reads `÷ N`
+(no "table").
+
+### v1.3 prototype - round 3: one distinct tune per theme + louder - 12 Sep 2026
+Isaac asked to simplify the music: instead of a per-operation tune re-flavoured per theme,
+have **one tune per theme** that plays across all operations/options, make the tunes properly
+distinct (not just tempo), and turn the volume up. Still prototype-only (`1.3.0-proto`).
+
+- **`sound.js` reworked.** Dropped the per-context `TUNES` (mul/add/sub/div/facts/daily) and
+  the `THEME_FLAVOURS` transpose/tempo layer. Added **one composed tune per theme** (10 tunes),
+  each with its own melody, bass line, lead waveform and tempo, in different registers/keys so
+  they're clearly different from each other:
+  Math (bright C-major square march), Plumber (fast bouncy chiptune), Dino (slow heavy low
+  sawtooth stomp), Hedgehog (very fast zippy high square arpeggio), Magic (gentle sparkly high
+  sine waltz), Space (airy floaty triangle), Ocean (slow mellow low sine), Jungle (lively
+  percussive triangle), Candy (high fast sugary square), Robot (buzzy mechanical low sawtooth
+  ostinato). `startMusic()` now picks the tune by the **active theme** (arg ignored, kept for
+  call-site compatibility); `setThemeTune(themeKey)` switches the tune live if music is on.
+- **Louder.** Added a `MASTER` gain multiplier (2.6x) applied to every voice (lead, octave
+  double, bass, hi-hat), so the music bed is clearly audible while still under the SFX.
+- **`app.js` tidied to match:** `playTune()` is now theme-agnostic (just starts/stops per the
+  Music setting); removed the obsolete `lastTune` variable (fixing a would-be ReferenceError in
+  the Music toggle handler); `applySkin` passes the theme key to `setThemeTune`; the in-play
+  theme picker starts the new theme's tune if Music is on. Removed a dead `DEFAULT_THEME` import.
+
+Diagnostics clean (sound.js, app.js). **Needs Isaac's Live Server recheck:** turn Music on and
+switch between themes - each theme should have an obviously different tune (character, register,
+speed), noticeably louder than before, and the same tune should play across all operations within
+a theme. Prototype remains `1.3.0-proto`.
+
+### v1.3 prototype - round 4: louder music, live theme refresh, theme-avatars, fuller layout - 12 Sep 2026
+Four more fixes after Isaac's test. Still prototype-only (`1.3.0-proto`).
+
+1. **Music much louder + safe.** Added a dedicated **music output bus** in `sound.js`
+   (gain -> `DynamicsCompressor`/limiter -> destination); all music voices now route through
+   it instead of straight to the destination. Raised `MASTER` 2.6 -> **6.0**. The limiter
+   (threshold -14dB, ratio 12) catches peaks so it's loud without clipping/distortion. SFX
+   still go direct.
+2. **In-play theme change now reflects immediately.** The palette was already live via
+   `data-skin`, but themed *content* (operation-tile emoji, background) only refreshed on
+   home/reload. Added `refreshCurrentScreen()` (re-runs the current route's render) and call it
+   from the theme picker's `onChoose`, so tiles/emoji/background all update on the spot. (The
+   Play screen is deliberately not re-rendered mid-round; its CSS palette/background still
+   update.)
+3. **Avatar auto-changes with the theme (no re-pick).** New `randomThemeAvatar(themeKey, avoid)`
+   in `themes.js` (prefers the theme's own characters, skips the current one so the change
+   shows). On an in-play theme change, `openThemePicker` now assigns a random on-theme avatar
+   to the active profile and saves it - the player chip updates automatically.
+4. **Fuller layout (less empty space).** `styles.css`: the "short" screens (operations picker,
+   who's-playing, fun facts, results) now **centre vertically + horizontally** in the available
+   space instead of hugging the top; content-heavy screens (play/progress/rewards/help/setup)
+   stay top-aligned. Tiles + headings **scale up on tablet/laptop** (>=600px bigger tiles;
+   >=900px the option tiles go **3-across** = 3x2, filling the width), and grow a bit on phones
+   too. Fills mobile/tablet/desktop far better.
+
+Diagnostics clean (sound.js, app.js, themes.js, styles.css). **Needs Isaac's Live Server
+recheck:** (a) music clearly louder; (b) switching theme mid-play updates colours, background,
+tiles AND the player chip's avatar instantly - no reload; (c) each theme change gives a random
+on-theme avatar; (d) screens fill the space better on phone, tablet and laptop. Prototype
+remains `1.3.0-proto`.
+
+### v1.3 prototype - round 5: fix theme change dropping the player out of a live round - 12 Sep 2026
+Isaac found that changing theme **mid-round** bounced the player back to the operations
+picker instead of continuing the round. **Root cause:** round 4's `refreshCurrentScreen()`
+re-ran `routes[currentRoute]()`, but the Play screen isn't a route - during a round
+`currentRoute` still points at the screen we came FROM (usually `home`), so the refresh
+re-rendered the Mode/Home screen and abandoned the round. **Fix:** `refreshCurrentScreen()`
+now **returns early if the Play screen is active**, so a live round is never rebuilt; the
+palette/background/colours still update via the `data-skin` CSS. Themed content on
+non-play screens still refreshes as before. Diagnostics clean (app.js). Prototype `1.3.0-proto`.
+
+**Recheck:** start a round, change theme from the player menu mid-question - the round should
+continue from where it was (same question/progress), with the new colours/background applied.
+
+### v1.3 prototype - round 6: theme/avatar pickers fit without scrolling - 12 Sep 2026
+Isaac: the Theme and Avatar pickers (create/edit profile + in-play Change Theme) were cramped
+and needed scrolling/a seek-bar to see all options. Made them responsive so everything fits on
+one screen across phone / tablet / laptop (CSS-only). Prototype `1.3.0-proto`.
+
+- **Theme picker grid** (`.theme-grid`): dropped the `max-height:46vh` + `overflow-y:auto`
+  scroll cap; now responsive columns - **2-up phone, 3-up tablet (>=560px), 4-up laptop
+  (>=820px)** - and tiles compacted slightly so all 10 themes show at once.
+- **Theme dialog modal** (in-play Change Theme): added a `.modal-wide` variant on the dialog
+  (`max-width` 560px, 760px >=700px, 900px >=1000px) so the wider grid has room.
+- **Avatar grid** (`.avatar-grid`): switched from a fixed 5 columns to `auto-fill
+  minmax(54px,1fr)` (62px >=600px), so more columns appear on wider screens and the full set
+  shows without scrolling.
+
+Diagnostics clean (styles.css, ui.js). **Recheck:** create/edit a profile and open the in-play
+Change Theme - all themes and all avatars should be visible at once (no scroll/seek-bar) on
+phone, tablet and laptop widths.
+
+### v1.3 prototype - round 7: full sweep for scroll/seek-bar in selection surfaces - 12 Sep 2026
+Isaac asked to verify the WHOLE app for any window/modal/screen that needs scrolling or a
+seek-bar to see all options, and fix them so everything shows at once. Audited every
+`overflow`/height-cap and each selection surface. Findings + fixes (CSS-only + one class add):
+
+- **Table picker dialog** (Pick a table / Pick a number, 1-20): was a fixed 5-col grid (4 rows)
+  in a 460px modal. Made `.table-grid` responsive - **5-up phone, 7-up tablet, 10-up laptop** -
+  and added `.modal-wide` to the dialog, so all 20 numbers show compactly without scrolling.
+- **Player chip menu** (top-right dropdown): had `overflow: hidden`, which would **clip** items
+  off-screen on a very short viewport (worse than a scrollbar). Changed to
+  `overflow: hidden auto; max-height: min(80vh, 460px)` so items are never cut off; it only
+  scrolls as a last resort on tiny screens (normally all items fit).
+- **Theme-tile compacting fix:** round 6's compact overrides were placed BEFORE the full
+  `.theme-opt`/`.theme-opt-emoji` rules, so they were overridden and never took effect. Folded
+  the compact values (10px padding, 40px emoji chip) into the real definitions so the theme
+  picker tiles are genuinely smaller and all 10 fit.
+
+**Left as intentional exceptions (not selection surfaces):**
+- **Multiplication mastery grid** (`.grid-scroll`, 20x20): horizontal scroll is the correct
+  pattern for a wide data table - forcing 400 cells to fit would make them unreadable. It's a
+  view, not a picker, so it stays scrollable by design.
+- **Wizard theme step / very short landscape phones:** the create/edit wizard flows in normal
+  page layout (not a trapped inner scroll); on an extremely short landscape phone the modal
+  dialogs fall back to a gentle internal scroll (`.modal max-height: 92vh`) rather than clipping.
+
+Diagnostics clean (styles.css, ui.js). **Recheck:** open Pick a table/number, the player menu,
+the theme picker and the avatar step at phone / tablet / laptop widths - all options should be
+visible at once (mastery grid still scrolls sideways by design). Prototype `1.3.0-proto`.
+
+### Port caution - the top-right header cluster (flagged by Isaac, 12 Sep 2026)
+When porting v1.3 to the live app, be **extra careful with the top-right header** (the
+"MathFun tab/box" = theme toggle + Home button + player chip). Isaac has seen it glitch in the
+live app before. Specific things to get right at port time:
+
+- **No id collisions.** The header Home button MUST stay `headerHomeBtn` - do NOT revert it to
+  `homeBtn` (that id already belongs to the Results screen's Home button; the clash was the
+  original v1.1 glitch). Both prototype and live already use `headerHomeBtn` - keep it.
+- **Chip menu changes to port cleanly:** v1.3 adds a **Theme** item to the player dropdown, and
+  round 7 changed `.chip-menu` to `overflow: hidden auto; max-height: min(80vh,460px)`. Make sure
+  these land in the live styles and the menu doesn't overflow/clip or misalign the chip.
+- **Header layout:** preserve the single-line mobile header (`.header-right` nowrap + icon-only
+  Theme/Home under 560px, tightened chip). Don't let the extra Theme menu item or the footer push
+  the header around.
+- **Do NOT blind-copy the prototype index.html** over the live one. Keep the live app's production
+  head (meta description, `apple-touch-icon.png`, NO proto banner, title "MathFun") and only layer
+  the v1.3 additions (footer, any header/Help copy) on top.
+- **Verify explicitly:** diff the header block before/after, and have Isaac eyeball the top-right on
+  the DEPLOYED site in light + dark, desktop + mobile, with and without an active profile (the chip
+  is hidden until a profile exists; Home button hidden until a profile is active).
+
+## v1.3.0 ported to the live app + release chores done - 12 Sep 2026
+Isaac signed off the prototype, so I did the one-pass port from `prototypes/` to the app root as
+**v1.3.0**. **Not yet pushed/deployed** - Isaac pushes via GitHub Desktop and verifies, then flips
+Ideas.md to Built.
+
+**What shipped in v1.3.0:** 10 trademark-safe **character themes** (Math World default + Plumber/
+Dino/Hedgehog/Magic/Space/Ocean/Jungle/Candy/Robot), chosen at profile creation (new Theme step
+before avatar, live preview) and changeable in-play from the player menu; each theme changes the
+palette, a themed emoji-pattern background, the op/tab/hint emoji, its on-theme avatar set, and the
+background music. **Theme-driven avatars** (random on-theme avatar on theme change). **One tune per
+theme** (louder, via a limiter bus). An **app-wide footer** ("Powered by Forje" + copyright). Layout
++ picker polish (short screens centre, tiles scale up/3x2 on wide, theme/table/avatar pickers show
+all options without scrolling).
+
+**Ported (production settings, not a blind copy):**
+- **New `js/themes.js`** - copied verbatim (neutral module).
+- `js/sound.js`, `js/ui.js` - copied verbatim from the finalized prototype (neutral; the app-level
+  theme concern lives only in app.js/state.js, which were NOT blind-copied).
+- `js/state.js` - **kept the shipped `mathfun_` prefix + app-level light/dark theme**
+  (`store.theme` + getTheme/setTheme) and the schema-3 migration; layered on per-profile
+  `settings.skin` (default 'math'), `getSkin`/`setSkin`, `newProfile` carries skin,
+  `resetActiveProgress` preserves it.
+- `js/app.js` - **kept the shipped app-level theme wiring** (delegated `#themeToggle` click,
+  `osPrefersDark`, network-first SW auto-reload); layered on `applySkin`/`updateMetaThemeColor`,
+  `openThemePicker` (+ random on-theme avatar), `refreshCurrentScreen` (no-op on the play screen so
+  a live round is never dropped), theme-based `playTune`/music, skin-aware `renderOperations` + hint
+  icon, chip-menu **Theme** handler. `APP_VERSION` -> **1.3.0**.
+- `index.html` - added the **footer** (before the script) + Theme mentions in Help. **Header left
+  exactly as shipped** (production head, meta description, `apple-touch-icon.png`, NO proto banner,
+  `headerHomeBtn` id preserved - the historical clash guard). `#screen-funfacts` already present.
+- `styles.css` - appended the full v1.3 block (skins + patterns, footer, layout, picker/scroll
+  fixes, modal-wide, responsive table/avatar grids, chip-menu overflow) after the existing
+  reduced-motion block.
+- `sw.js` - VERSION -> **1.3.0** (cache `mathfun-v1.3.0`), added `./js/themes.js` to precache.
+- `manifest.webmanifest` - description mentions themes.
+
+**Release chores:** README (features + layout + **v1.3.0 changelog**, themes.js in layout,
+per-theme music), userguide.html (Theme wizard step, new **Themes** section, per-theme music,
+footer -> v1.3.0), SPEC requirements (**R13** + status + summary), design (**section 14** + status),
+tasks (**Phase 9** + status). Ideas.md will move to Built **after** Isaac verifies (his call).
+
+**Header caution honoured (Isaac's flag):** the top-right cluster was ported carefully - the
+header markup in `index.html` is untouched from the shipped app; `headerHomeBtn` kept (no revert to
+`homeBtn`, which still belongs to the Results screen); the new **Theme** menu item and the
+`.chip-menu { overflow: hidden auto; max-height }` change came across in ui.js/styles.css.
+
+**Data-safety note:** existing profiles are schema 3. v1.3 only **adds** `settings.skin`
+(`fillDefaults` backfills `'math'`) and the app-level theme is untouched - non-destructive, but not
+exercised in a browser here.
+
+**Verification:** all **9** live files pass diagnostics with zero errors; the port was a deliberate
+merge (theme/storage/SW kept from the shipped app), cross-read against every consumer. As always the
+Windows/Kiro shell can't run a browser here - needs Isaac's deploy + hosted check.
+
+**Isaac - to ship & verify:**
+1. **Push** via GitHub Desktop (review the diff; `prototypes/` is git-ignored, so only the app +
+   docs go up). Suggested commit: `MathFun v1.3.0 - character themes, theme-driven avatars, per-theme music, footer`.
+2. After Pages updates, **hard-refresh** (Ctrl+Shift+R) or reopen the installed app once so the
+   `mathfun-v1.3.0` service worker activates.
+3. **Verify (deployed, ideally on a profile with existing progress):**
+   - Old progress/bests still load; existing profile defaults to Math World (migration OK).
+   - **Top-right header** looks right (light + dark, desktop + mobile, with and without an active
+     profile): theme toggle + Home + player chip aligned on one line; Theme item in the chip menu.
+   - Create a profile: Name -> Gender -> Age -> **Theme** (live preview) -> **Avatar** (theme's set).
+   - Themes change palette/background/tiles/hint/music; change theme in-play (colours + avatar +
+     music update; a live round keeps going).
+   - Pickers (theme / table 1-20 / avatar) show all options without scrolling on phone/tablet/laptop.
+   - **Footer** on every screen; Light/Dark still works on every screen incl. before a profile.
+   - Optional: Lighthouse PWA/installability still green; installs and runs offline.
+4. Once happy, tell me and I'll flip **Ideas.md -> Built (MathFun v1.3.0)**.
+
+**Status: v1.3.0 ported, documented and diagnostics-clean; awaiting Isaac's push + hosted verify.
+Ideas.md deliberately left at In Progress until Isaac's go-ahead.**

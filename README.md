@@ -7,7 +7,7 @@ Built as an installable, offline-capable PWA.
 **Live demo:** https://isaacgera.github.io/MathFun/
 
 > Covers **Addition, Subtraction, Multiplication and Division**, plus **Fun Facts** and a
-> mixed **Daily Challenge**. Multiplication runs 1x1 to 20x20.
+> mixed **Daily Challenge**. Multiplication runs 1x1 to 20x20. Now with **10 character themes**.
 
 ## Features
 - **Choose an option** - a landing page with **Addition, Subtraction, Multiplication** and
@@ -37,10 +37,16 @@ Built as an installable, offline-capable PWA.
 - **My Progress** - opened before choosing an operation it shows an **all-operations overview**;
   in/after an operation it shows that operation's detail (rounds, accuracy, best per level).
   Multiplication also shows its colourful A x B mastery grid (1x-20x).
-- **Sound & Music** - synthesized effects, plus a different upbeat background tune for each
-  operation, Fun Facts and the Daily Challenge. Timer / Sound / Music toggles live in the
-  player menu; music is on by default.
-- **Light / dark theme** - follows the device and can be toggled; choice persists.
+- **Sound & Music** - synthesized effects, plus a distinct upbeat background tune **per theme**
+  (one tune that plays across all operations while that theme is active). Timer / Sound / Music
+  toggles live in the player menu; music is on by default.
+- **Character themes** - 10 trademark-safe skins (Math World, Plumber World, Dino Valley,
+  Speedy Hedgehog, Magic Kingdom, Space Blast, Ocean Deep, Jungle Safari, Candy Land, Robot Lab).
+  Chosen at profile creation and changeable in-play from the player menu; each theme changes the
+  palette, background, tile/tab/hint emoji, its on-theme avatar set, and the background music.
+  Math World (maths symbols) is the default shown before any profile exists.
+- **Light / dark theme** - follows the device and can be toggled; choice persists. Layers on
+  top of the character theme, so every theme has a light and a dark form.
 - **Accessible & mobile-first** - large tap targets, keyboard answering (keys 1-4),
   visible focus, reduced-motion support, ARIA labels; scales from phone to desktop.
 - **Local-first & private** - everything is stored on the device in `localStorage`.
@@ -79,6 +85,7 @@ MathFun/
   js/
     app.js              bootstrap, routing, profile flow, wiring
     state.js            localStorage (the only module that touches it); per-operation progress
+    themes.js           character-theme registry (palettes, emoji, avatars, tune per theme)
     questions.js        multiplication fact pools + near-miss distractor generation
     operations.js       per-operation config (symbols, levels, ranges, generators, hints)
     funfacts.js         local, offline set of 100 fun maths/number facts
@@ -98,6 +105,24 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.3.0 - 12 Sep 2026
+- **Character themes!** 10 trademark-safe skins (Math World, Plumber World, Dino Valley, Speedy
+  Hedgehog, Magic Kingdom, Space Blast, Ocean Deep, Jungle Safari, Candy Land, Robot Lab). Chosen
+  at profile creation (a new Theme step, before the avatar step) and changeable any time from the
+  player menu. Each theme changes the palette, a themed background, the operation/tab/hint emoji,
+  its on-theme avatar set, and the background music. Math World (maths symbols) is the default
+  shown before any profile exists. Themes layer on top of Light/Dark, so each has both forms.
+- **Theme-driven avatars** - the avatar grid shows the chosen theme's characters (plus a small
+  neutral fallback), and changing theme in-play auto-assigns a random on-theme avatar.
+- **One tune per theme** - each theme has its own distinct, louder background tune (routed through
+  a limiter) that plays across all operations, replacing the earlier per-operation tunes.
+- **App-wide footer** - "Powered by Forje" and the copyright line on every screen.
+- **Layout & pickers** - short screens centre in the viewport and tiles scale up on tablet/laptop
+  (option tiles go 3x2 on wide screens); the theme, table (1-20) and avatar pickers are responsive
+  so every option shows without scrolling.
+- Data migrates with no loss: existing profiles gain a `skin` field defaulting to Math World; the
+  app-level light/dark theme and all per-operation progress are preserved.
+
 ### v1.2.1 - 09 Sep 2026
 - Mobile polish: the landing (operation picker) sits lower toward the centre on phones; the
   header logo blends with the background and the "MathFun" wordmark stays visible on mobile.

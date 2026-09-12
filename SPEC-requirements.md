@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Shipped v1.2.0 (Addition, Subtraction, Multiplication & Division + Fun Facts + Daily Challenge) - https://isaacgera.github.io/MathFun/
+- **Status:** Shipped v1.3.0 (Addition, Subtraction, Multiplication & Division + Fun Facts + Daily Challenge + Character Themes) - https://isaacgera.github.io/MathFun/
 - **Audience:** School-going children (fun-first, not a dry drill).
 
 ## Summary
@@ -18,6 +18,10 @@ and which need more work.
   (100 facts); a mixed **Daily Challenge**; a **"Need a Hint?"** helper (untimed mode); a
   context-aware **My Progress**; **per-context music**; Timer/Sound/Music moved into the player
   menu (music on by default); an editable **age stepper** (0-100, default 5).
+- **v1.3 (shipped):** **10 character themes** (trademark-safe) chosen at profile creation and
+  changeable in-play, each changing the palette, background, tile/tab/hint emoji, its on-theme
+  avatar set and the background music (**one tune per theme**); **theme-driven avatars**; an
+  **app-wide footer**; and layout/scroll polish so pickers show all options at once.
 
 ## Build-standards flags (agreed at kickoff)
 - **Rigour:** Simple tier - tidy modular vanilla code, design tokens, accessibility built in; no heavy CI/automated tests.
@@ -178,6 +182,28 @@ with that when the time comes.)
 - R12.7 **Layout/mobile:** the option tiles are a fixed **2x3** grid that stays squarish and tidy
   on both phone and desktop; the header (theme / home / player) stays on **one line** on mobile
   with icon-only Theme/Home buttons (full labels kept in aria-label/title).
+
+### R13 - Character themes (v1.3)
+**As a child, I want to pick a fun theme so the whole game looks and sounds the way I like.**
+- R13.1 **10 themes**, all original/trademark-safe (no copyrighted names, characters, logos or
+  music): Math World (default), Plumber World, Dino Valley, Speedy Hedgehog, Magic Kingdom, Space
+  Blast, Ocean Deep, Jungle Safari, Candy Land, Robot Lab.
+- R13.2 The theme is **chosen at profile creation** (a Theme step, before the character step, with
+  a live preview) and is **changeable any time in-play** from the player menu.
+- R13.3 The active theme changes the **colour palette**, a **themed background**, the emoji on the
+  **operation tiles, Fun Facts/Daily Challenge tabs and the hint**, the **avatar choices** offered,
+  and the **background music**.
+- R13.4 **Music is one tune per theme** (a single distinct tune that plays across all operations
+  while that theme is active), clearly audible; still fully synthesized (no audio files, R7.2).
+- R13.5 **Theme-driven avatars:** the character grid shows the chosen theme's characters (plus a
+  small neutral fallback); changing theme in-play assigns a **random on-theme avatar** so the
+  player never has to re-pick.
+- R13.6 The theme is **per-profile** and persists; it is a **separate axis** from the light/dark
+  theme, which still works on top (every theme has a light and a dark form). **Math World** is the
+  default shown before any profile exists. Changing theme mid-round must **not** interrupt the round.
+- R13.7 Selection surfaces (theme picker, table 1-20 picker, avatar grid) show **all options at
+  once** without scrolling/seek-bars across phone/tablet/laptop.
+- R13.8 An app-wide **footer** ("Powered by Forje" + copyright) is visible on every screen.
 
 ---
 

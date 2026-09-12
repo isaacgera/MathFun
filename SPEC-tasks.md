@@ -1,6 +1,6 @@
 ﻿# MathFun - Tasks
 
-- **Tier:** Simple | **Status:** Shipped v1.2.0 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge) | **Workflow:** prototype-first.
+- **Tier:** Simple | **Status:** Shipped v1.3.0 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes) | **Workflow:** prototype-first.
 - **Live:** https://isaacgera.github.io/MathFun/
 - Shipping app at `Learning/MathFun/` root; the sandbox it was built in is kept at `Learning/MathFun/prototypes/` (git-ignored, not published).
 
@@ -104,6 +104,29 @@ Isaac on Live Server, then ported to the app root as **v1.2.0**.
 - [x] All 15 live files pass diagnostics (zero errors)
 - [ ] Isaac: deploy (GitHub Desktop) + verify on the hosted site
 - [ ] (Later) Division fully verified on device; optional fact-flavoured challenge questions
+
+## Phase 9 - v1.3: Character themes + footer (PORTED, awaiting deploy)
+Built prototype-first (`1.3.0-proto`) over several feedback rounds, verified by Isaac on Live
+Server, then ported to the app root as **v1.3.0**.
+- [x] New `themes.js` - registry of 10 trademark-safe themes (palette tokens, background, emoji
+      overrides for op tiles / tabs / hint, on-theme avatar set, tune key); `getSkin`/`setSkin`
+- [x] **`data-skin` on `<html>`** as a parallel axis to `data-theme` (light/dark still layers on
+      top); per-skin CSS palette + themed emoji-pattern background (inline SVG, offline)
+- [x] **Theme picker** - a new Theme step in the create wizard (before avatar, live preview) and
+      a **Theme** launcher in the player menu (changeable in-play)
+- [x] **Theme-driven avatars** - avatar grid shows the chosen theme's characters (+ neutral
+      fallback); changing theme in-play auto-assigns a random on-theme avatar
+- [x] **One tune per theme** - `sound.js` reworked to a distinct louder tune per theme (limiter
+      bus), replacing per-operation tunes; `setThemeTune`/`startMusic`/`restartCurrent`
+- [x] **App-wide footer** ("Powered by Forje" + copyright) on every screen
+- [x] **Layout & pickers** - short screens centre; tiles scale up (3x2 on wide); theme/table/
+      avatar pickers responsive so all options show without scrolling
+- [x] `state.js` - per-profile `settings.skin` (default 'math'); kept `mathfun_` prefix +
+      app-level light/dark theme + schema-3 migration (backfills skin, no data loss)
+- [x] Port to shipped app: `APP_VERSION` 1.3.0, cache `mathfun-v1.3.0`, precache `themes.js`;
+      README changelog + userguide + SPEC status; manifest description; footer in prod index.html
+- [x] All live files pass diagnostics (zero errors)
+- [ ] Isaac: deploy (GitHub Desktop) + verify on the hosted site (esp. the top-right header cluster)
 
 ## Nice-to-have / later
 - [x] Store-quality raster icons (192 / 512 / maskable PNGs) + iOS apple-touch icon (v1.0.7);

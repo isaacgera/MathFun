@@ -1,7 +1,7 @@
 {
   "name": "MathFun - Maths Practice",
   "short_name": "MathFun",
-  "description": "A playful maths game for kids. Practise addition, subtraction, multiplication and division, with fun facts, a daily challenge and rewards.",
+  "description": "A playful maths game for kids. Practise addition, subtraction, multiplication and division, with fun facts, a daily challenge, rewards and colourful character themes.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
