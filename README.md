@@ -106,12 +106,17 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 
 ## Changelog
 ### v1.3.1 - 12 Sep 2026
-- **Bug fix (mobile):** the player menu (chip, top-right) opened but its items - Profile, Theme,
-  the Timer/Sound/Music toggles, Rewards, Progress, Switch player - couldn't be selected on mobile.
-  The outside-click/Escape close handler was being bound on every header re-render, stacking stale
-  listeners (each capturing an old, replaced menu) that could immediately re-close the freshly
-  opened menu. It's now bound once at the document level and finds the current menu each time, so
-  every menu item works. Also stop event propagation on menu-item taps. Desktop was unaffected.
+- **Bug fix:** the player menu (chip, top-right) and the header **Home** button didn't respond to
+  taps/clicks where they overlapped the page content. Root cause was a z-index stacking bug in the
+  v1.3 themed-background CSS: the header and the main area were given the **same** `z-index`, so the
+  later-in-DOM main area painted over the header's dropdown and swallowed the taps (the theme toggle
+  still worked only because it uses a delegated document listener). Fixed by putting the header
+  above the main content in the stacking order (header `z-index: 30`, main `1`, modals `50`).
+- Also hardened the menu's outside-click/Escape close so it's bound once (not stacked on every
+  header re-render) and looks up the current menu each time.
+- **Accessibility polish:** the theme toggle now announces its **current** state and what a tap
+  switches to (e.g. "Light theme on. Switch to dark theme."); removed the footer copyright's extra
+  opacity so its small text keeps a safe contrast ratio on the lighter themed backgrounds.
 
 ### v1.3.0 - 12 Sep 2026
 - **Character themes!** 10 trademark-safe skins (Math World, Plumber World, Dino Valley, Speedy

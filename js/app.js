@@ -138,8 +138,10 @@ function updateThemeButton(theme) {
   const txtEl = btn.querySelector('.hdr-txt');
   if (icoEl && txtEl) { icoEl.textContent = ico; txtEl.textContent = word; }
   else btn.textContent = `${ico} ${word}`;
-  btn.setAttribute('aria-label', `Switch to ${switchTo} theme`);
-  btn.setAttribute('title', `Switch to ${switchTo} theme`);
+  // State-aware label: announce the CURRENT theme and what a tap will switch to (a11y).
+  const label = `${resolved === 'dark' ? 'Dark' : 'Light'} theme on. Switch to ${switchTo} theme.`;
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
 }
 
 // ---------- Header (Home button + profile chip) ----------

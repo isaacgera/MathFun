@@ -685,8 +685,13 @@ body::before {
   opacity: var(--skin-pattern-opacity, 0.10);
   transition: opacity var(--transition);
 }
-/* Keep real content above the decorative layer. */
-.app-header, .app-main, .app-footer, #modalHost { position: relative; z-index: 1; }
+/* Keep real content above the decorative layer. The HEADER must sit above .app-main so its
+   dropdown menu (the player chip menu) is clickable where it overlaps the page content -
+   otherwise .app-main (same z-index, later in the DOM) paints over the menu and swallows taps
+   (v1.3.1 fix). #modalHost stays highest for full-screen dialogs. */
+.app-main, .app-footer { position: relative; z-index: 1; }
+.app-header { position: relative; z-index: 30; }
+#modalHost { position: relative; z-index: 50; }
 /* In dark mode the emoji pattern is dialled down so it doesn't fight the dark surfaces. */
 :root[data-theme="dark"] body::before { opacity: 0.06; }
 @media (prefers-color-scheme: dark) {
@@ -854,7 +859,9 @@ body::before {
   color: var(--text-soft); line-height: 1.5;
 }
 .app-footer .footer-brand { font-weight: 800; font-size: 0.82rem; }
-.app-footer .footer-copy { font-size: 0.72rem; opacity: 0.9; }
+/* No extra opacity here: it would compound with the already-soft colour + small size and
+   risk dipping below the 4.5:1 contrast minimum on the lighter themed backgrounds (a11y). */
+.app-footer .footer-copy { font-size: 0.72rem; }
 .app-footer .footer-brand .accent { color: var(--brand); }
 @media (max-width: 560px) {
   .app-footer { padding: 10px 12px 14px; }

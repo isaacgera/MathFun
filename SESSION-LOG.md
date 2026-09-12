@@ -1114,3 +1114,57 @@ Timer/Sound/Music toggles, Rewards, Progress, Switch player all did nothing. (Fi
 **To ship:** commit + push the v1.3.1 files (js/app.js, js/ui.js, sw.js, README.md,
 userguide.html, SPEC-tasks.md) once Isaac confirms on mobile. Ideas.md still **In Progress** until
 Isaac's go-ahead.
+
+### v1.3.1 - ACTUAL root cause: z-index stacking (header under main) - 12 Sep 2026
+The first v1.3.1 attempt (de-stacking the close listeners) did **not** fix it - Isaac confirmed
+via browser DevTools mobile mode that the **Home button was also dead**, while the **theme toggle
+still worked**. That combination was the tell:
+- Theme toggle works because it's bound via a **delegated `document` click** in app.js
+  (`closest('#themeToggle')`), which fires regardless of overlay.
+- Home button + chip-menu items use **direct element listeners** - and the taps never reached them.
+
+**Real root cause:** the v1.3 themed-background CSS included
+`.app-header, .app-main, .app-footer, #modalHost { position: relative; z-index: 1; }`. Giving the
+header and main the **same** z-index made each a stacking context; `.app-main` comes later in the
+DOM, so it painted **on top** of the header. The chip menu (`z-index:20`) is nested inside the
+header's context, so its 20 couldn't lift it above `.app-main`. The menu (and the Home button edge)
+were **visible but overlaid by `.app-main`, which ate the taps**. Desktop mostly avoided it by
+layout luck; mobile hit it every time.
+
+**Fix (styles.css, live + prototype):** header now sits above the main content -
+`.app-main/.app-footer { z-index: 1 }`, **`.app-header { z-index: 30 }`**, `#modalHost { z-index: 50 }`.
+Background pseudo-layer stays at `z-index: 0; pointer-events: none`. The earlier listener-hardening
+is kept (still correct), but this z-index change is what actually restores the Home button and every
+chip-menu item. Still shipping as **v1.3.1** (1.3.1 was not pushed yet).
+
+**Verification:** both styles.css pass diagnostics. Needs Isaac's mobile recheck (DevTools mobile
+mode or a phone): Home button works, and every chip-menu item (Profile / Theme / Timer / Sound /
+Music / Rewards / Progress / Switch player) is selectable.
+
+**To ship:** commit + push the v1.3.1 files - now including **styles.css** (the real fix) alongside
+js/app.js, js/ui.js, sw.js, README.md, userguide.html, SPEC-tasks.md. Ideas.md still In Progress.
+
+### v1.3.1 - accessibility polish (pre-push) - 12 Sep 2026
+After the z-index fix, ran a code-level accessibility audit (laptop + mobile) and addressed the
+two low-risk gaps it surfaced. Applied to **live + prototype**; still v1.3.1.
+
+- **State-aware theme toggle** (`app.js` `updateThemeButton`, live + proto): the aria-label/title
+  now state the CURRENT theme and the switch target ("Light theme on. Switch to dark theme."),
+  instead of only "Switch to dark theme" - a screen-reader user now hears the current state too.
+- **Footer contrast** (`styles.css`, live + proto): removed the `opacity: 0.9` on `.footer-copy`.
+  That opacity compounded with the already-soft `--text-soft` colour + small (0.72rem) size and
+  risked dipping under the 4.5:1 minimum on the lighter themed backgrounds (Candy/Ocean/etc.). Now
+  it renders at full `--text-soft`, which measures comfortably above 4.5:1 on every skin surface.
+
+**Audit result otherwise (no change needed):** real `<button>`s throughout; `:focus-visible`
+outlines on every control; tap targets >=44-52px; menu has role=menu/menuitem + aria-haspopup/
+expanded; switches role=switch + aria-checked; feedback aria-live; decorative emoji/background are
+aria-hidden + pointer-events:none; reduced-motion honoured; headings focus on screen change.
+`--text-soft` (#5b5f7a) passes >=4.5:1 on white and on the lightest skin tints. **Honest caveat:**
+full WCAG validation needs a real screen-reader (NVDA/VoiceOver) + a per-theme contrast checker,
+which can't run in this shell - this was a code-level review.
+
+Diagnostics clean (app.js + styles.css, live + proto). **Needs Isaac's quick recheck** (theme
+button label via DevTools accessibility pane if handy; footer readable on Candy/Ocean themes), then
+ship v1.3.1. Files to push: styles.css, js/app.js, js/ui.js, sw.js, README.md, userguide.html,
+SPEC-tasks.md, SESSION-LOG.md.
