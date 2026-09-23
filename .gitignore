@@ -17,3 +17,11 @@ node_modules/
 
 # Local prototype sandbox - never published
 prototypes/
+
+# Android / Google Play packaging - build output + SIGNING SECRETS, never commit.
+# The signing key CANNOT be recovered if lost or leaked; keep it backed up OUTSIDE this repo.
+*.keystore
+*.aab
+*.apk
+signing-key-info.txt
+MathFun - Google Play package/
