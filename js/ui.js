@@ -314,9 +314,9 @@ export function renderPlayShell(container, mode) {
       <div class="mode-tag">${modeLabel(mode)}</div>
     </div>
     <div class="progress" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
-    <div class="progress-text" id="progressText"></div>
+    <div class="progress-text" id="progressText" role="status" aria-live="polite"></div>
     <div class="timer-wrap hidden" id="timerWrap"><div class="timer-bar" id="timerBar"></div></div>
-    <div class="question" id="questionText" aria-live="off"></div>
+    <div class="question" id="questionText" aria-live="polite" aria-atomic="true"></div>
     <div class="options" id="options" role="group" aria-label="Answer choices"></div>
     <div class="hint-zone" id="hintZone"></div>
     <div class="feedback" id="feedback" aria-live="polite"></div>
@@ -338,6 +338,8 @@ export function renderQuestion(container, round) {
     b.className = 'option';
     b.textContent = val;
     b.dataset.value = val;
+    // Explicit label so a screen reader announces context, not just a bare number.
+    b.setAttribute('aria-label', `Answer ${i + 1}: ${val}`);
     b.setAttribute('aria-keyshortcuts', String(i + 1));
     b.addEventListener('click', () => window.MathFun.answer(val, b));
     opts.appendChild(b);

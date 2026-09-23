@@ -128,6 +128,43 @@ Server, then ported to the app root as **v1.3.0**.
 - [x] All live files pass diagnostics (zero errors)
 - [ ] Isaac: deploy (GitHub Desktop) + verify on the hosted site (esp. the top-right header cluster)
 
+## Phase 10 - v1.3.2: App-store readiness (manifest + icons + screenshots)
+Quick Spec, straight to the app root (metadata/display only, no behaviour change). Prep for
+packaging MathFun for Google Play (Trusted Web Activity / PWABuilder) and the Apple App Store,
+following a read-only PWA Readiness Checker audit that found no blockers - only manifest
+completeness gaps.
+- [x] `manifest.webmanifest` - add `id` (`/MathFun/`), `lang` (`en-GB`), `dir` (`ltr`),
+      `categories` (`["education","games"]`)
+- [x] `manifest.webmanifest` - declare a 192 maskable icon; add `screenshots` array
+      (two `narrow` mobile + one `wide`)
+- [x] `icons/generate-icons.html` - also emit `icon-maskable-192.png` (from `icon-maskable.svg`)
+- [x] New `screenshots/generate-screenshots.html` - renders `mobile-home.png`, `mobile-play.png`,
+      `wide-home.png` from MathFun's real design tokens (swappable for real device captures later)
+- [x] `sw.js` - bump `VERSION`/cache to `1.3.2`; precache the new maskable icon + screenshots
+- [x] `js/app.js` - `APP_VERSION` -> `1.3.2`; README changelog + SESSION-LOG updated
+- [ ] Isaac: run both generators over Live Server to produce the PNGs; drop icon into `icons/`,
+      screenshots into `screenshots/`
+- [ ] Isaac: confirm/settle the footer copyright holder (currently "Nathan J Gera")
+- [ ] Isaac: deploy (GitHub Desktop) + run the live URL through PWABuilder to confirm the
+      manifest score is clean, then proceed to Android TWA packaging
+- [ ] (Later, needs Mac + Apple Developer account) iOS packaging via PWABuilder / Capacitor
+
+## Phase 11 - v1.3.3: Accessibility polish (pre-store-submission)
+Bug Fix / Quick Spec pass after a read-only Pre-Live Testing Agent audit (no blockers; a few
+desktop-specific contrast + screen-reader gaps). Prompted by wide-screen Lighthouse a11y 95
+(mobile was 100). CSS/ARIA only, no behaviour/layout change.
+- [x] Contrast S1: add `--good-ink` / `--bad-ink` tokens (light + dark) and use them for
+      `.option.is-correct` / `.option.is-wrong` text; verified >=4.5:1 (light 6.5/5.3, dark 9.0/8.0)
+- [x] Contrast S2: darken light-theme `--text-soft` (#5b5f7a -> #4c4f68) so small muted/footer text
+      clears 4.5:1 on the palest skins (Candy/Ocean/Dino ~7.3:1), absorbing the emoji-pattern layer
+- [x] SR S3: `#progressText` is now `role="status" aria-live="polite"` (progress announced)
+- [x] SR S4: `#questionText` now `aria-live="polite" aria-atomic="true"` (new question announced)
+- [x] SR S5: each answer button gets an explicit `aria-label` ("Answer N: value")
+- [x] Bump `APP_VERSION` + `sw.js` cache to 1.3.3; README changelog + SESSION-LOG
+- [ ] Isaac: re-run Lighthouse a11y on wide (expect 100) + axe DevTools on a light skin mid-round
+- [ ] Isaac: SR spot-check (NVDA/VoiceOver) that question + progress are announced
+- [ ] (Deferred, nice-to-have) Menu arrow-key roving (N1) + modal focus trap (N2)
+
 ## Nice-to-have / later
 - [x] Store-quality raster icons (192 / 512 / maskable PNGs) + iOS apple-touch icon (v1.0.7);
       generated from the SVGs via `icons/generate-icons.html`

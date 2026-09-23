@@ -1,7 +1,11 @@
 {
+  "id": "/MathFun/",
   "name": "MathFun - Maths Practice",
   "short_name": "MathFun",
   "description": "A playful maths game for kids. Practise addition, subtraction, multiplication and division, with fun facts, a daily challenge, rewards and colourful character themes.",
+  "lang": "en-GB",
+  "dir": "ltr",
+  "categories": ["education", "games"],
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -22,6 +26,12 @@
       "purpose": "any"
     },
     {
+      "src": "./icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "./icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
@@ -32,6 +42,29 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshots/mobile-home.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Pick an operation to practise"
+    },
+    {
+      "src": "./screenshots/mobile-play.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Answering a round"
+    },
+    {
+      "src": "./screenshots/wide-home.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "MathFun on a larger screen"
     }
   ]
 }

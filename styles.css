@@ -9,12 +9,20 @@
   --good-bg: #dcfce7;
   --bad: #dc2626;
   --bad-bg: #fee2e2;
+  /* Text colours for use ON the pale correct/wrong tints - darkened so short answer
+     digits clear WCAG 4.5:1 on --good-bg / --bad-bg (the tint colours themselves are
+     kept for borders/icons elsewhere). */
+  --good-ink: #166534;
+  --bad-ink: #b91c1c;
 
   --bg: #f5f3ff;
   --surface: #ffffff;
   --surface-2: #f1eefe;
   --text: #1f2340;
-  --text-soft: #5b5f7a;
+  /* Slightly darker than the old #5b5f7a so small muted/footer text keeps >=4.5:1 on the
+     palest skin backgrounds (Candy/Ocean/Dino) too, not just on white. Dark themes override
+     --text-soft below, so this only affects light. */
+  --text-soft: #4c4f68;
   --border: #e5e1f7;
 
   --radius: 18px;
@@ -47,6 +55,9 @@
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
     --good-bg: #143a24;
     --bad-bg: #401b1b;
+    /* On the dark tints, ink must be light to keep 4.5:1. */
+    --good-ink: #86efac;
+    --bad-ink: #fca5a5;
     --m-new: #475069;
   }
 }
@@ -55,6 +66,7 @@
   --text: #f0f1fb; --text-soft: #a6abcf; --border: #333863;
   --shadow: 0 6px 20px rgba(0,0,0,.4); --shadow-sm: 0 2px 8px rgba(0,0,0,.35);
   --good-bg: #143a24; --bad-bg: #401b1b; --m-new: #475069;
+  --good-ink: #86efac; --bad-ink: #fca5a5;
 }
 
 * { box-sizing: border-box; }
@@ -261,8 +273,8 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .option:active:not(:disabled) { transform: translateY(1px) scale(0.96); box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
 .option:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .option:disabled { cursor: default; }
-.option.is-correct { border-color: var(--good); background: var(--good-bg); color: var(--good); }
-.option.is-wrong { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
+.option.is-correct { border-color: var(--good); background: var(--good-bg); color: var(--good-ink); }
+.option.is-wrong { border-color: var(--bad); background: var(--bad-bg); color: var(--bad-ink); }
 
 /* ---------- v1.2: Need a Hint? (untimed mode, after a pause) ---------- */
 .hint-zone { min-height: 0; margin-top: var(--space); text-align: center; }

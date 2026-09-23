@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathFun - PWA screenshot generator</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+    body { margin: 0; padding: 24px; background: #f5f3ff; color: #1f2340; }
+    h1 { font-size: 1.25rem; margin: 0 0 4px; }
+    p { margin: 4px 0 16px; color: #5b5f7a; max-width: 70ch; line-height: 1.5; }
+    .row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+    .card { background: #fff; border: 1px solid #e5e1f7; border-radius: 16px; padding: 16px; text-align: center; box-shadow: 0 4px 14px rgba(80,60,160,.08); }
+    .card canvas { image-rendering: auto; border-radius: 12px; background: #fff; max-width: 220px; height: auto; box-shadow: 0 2px 8px rgba(76,60,180,.15); }
+    .card h2 { font-size: .95rem; margin: 10px 0 4px; }
+    .card small { color: #6b6490; display: block; margin-bottom: 10px; }
+    button { font: inherit; font-weight: 700; cursor: pointer; border: 0; border-radius: 10px; padding: 8px 14px; background: #6d5efc; color: #fff; transition: transform .15s ease, filter .15s ease; }
+    button:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    #all { margin: 4px 0 20px; background: #16a34a; }
+    .note { margin-top: 20px; font-size: .85rem; color: #6b6490; max-width: 70ch; }
+  </style>
+</head>
+<body>
+  <h1>MathFun PWA screenshot generator</h1>
+  <p>One-time helper (not shipped with the app). It renders MathFun's real design tokens and
+     layout into the PWA <code>screenshots</code> the manifest references (used by the Play Store
+     listing and PWABuilder's install UI). Click <strong>Download all</strong>, then keep the
+     files in this <code>screenshots/</code> folder. You can replace any of them later with a
+     real device capture using the same filename &mdash; nothing else needs to change.</p>
+
+  <button id="all" type="button">Download all</button>
+  <div class="row" id="cards"></div>
+
+  <p class="note">Rendered locally in your browser via canvas &mdash; nothing is uploaded.
+     Filenames match the manifest exactly: <code>mobile-home.png</code>,
+     <code>mobile-play.png</code>, <code>wide-home.png</code>.</p>
+
+  <script>
+    // MathFun design tokens (kept in sync with styles.css :root).
+    const T = {
+      brand: '#6d5efc', brand2: '#ff8fab', accent: '#ffb703',
+      good: '#16a34a', bad: '#dc2626',
+      bg: '#f5f3ff', surface: '#ffffff', surface2: '#f1eefe',
+      text: '#1f2340', textSoft: '#5b5f7a', border: '#e5e1f7',
+      white: '#ffffff',
+    };
+    const FONT = "'Segoe UI', system-ui, -apple-system, sans-serif";
+
+    // ---- small canvas helpers ----
+    function roundRect(ctx, x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+    function fillRoundRect(ctx, x, y, w, h, r, fill) { roundRect(ctx, x, y, w, h, r); ctx.fillStyle = fill; ctx.fill(); }
+    function text(ctx, str, x, y, size, color, weight, align) {
+      ctx.font = (weight || 700) + ' ' + size + "px " + FONT;
+      ctx.fillStyle = color; ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(str, x, y);
+    }
+    function bgGradient(ctx, w, h) {
+      const g = ctx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, '#f7f5ff'); g.addColorStop(1, '#efeaff');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    }
+    // The MathFun brand mark: gradient rounded square + white smiley cross.
+    function brandMark(ctx, cx, cy, s) {
+      ctx.save();
+      const g = ctx.createLinearGradient(cx - s / 2, cy - s / 2, cx + s / 2, cy + s / 2);
+      g.addColorStop(0, '#7c6cff'); g.addColorStop(0.55, '#ff7eb3'); g.addColorStop(1, '#ffb703');
+      fillRoundRect(ctx, cx - s / 2, cy - s / 2, s, s, s * 0.23, g);
+      // rotated cross
+      ctx.translate(cx, cy); ctx.rotate(Math.PI / 4);
+      const bar = s * 0.5, thick = s * 0.16, rr = thick / 2;
+      fillRoundRect(ctx, -thick / 2, -bar / 2, thick, bar, rr, '#fff');
+      fillRoundRect(ctx, -bar / 2, -thick / 2, bar, thick, rr, '#fff');
+      ctx.restore();
+      // eyes + smile
+      const eye = s * 0.045;
+      ctx.fillStyle = '#3b2f7a';
+      ctx.beginPath(); ctx.arc(cx - s * 0.09, cy - s * 0.03, eye, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + s * 0.09, cy - s * 0.03, eye, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#3b2f7a'; ctx.lineWidth = s * 0.05; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(cx, cy + s * 0.02, s * 0.13, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    }
+    function header(ctx, w, pad, y) {
+      brandMark(ctx, pad + 26, y, 52);
+      // gradient wordmark
+      const g = ctx.createLinearGradient(pad + 60, 0, pad + 260, 0);
+      g.addColorStop(0, T.brand); g.addColorStop(1, T.brand2);
+      text(ctx, 'MathFun', pad + 60, y, 38, '#000', 900, 'left');
+      ctx.font = '900 38px ' + FONT; ctx.fillStyle = g; ctx.textAlign = 'left';
+      ctx.fillText('MathFun', pad + 60, y);
+    }
+
+    // An operation tile (emoji + label) in MathFun's card style.
+    function opTile(ctx, x, y, w, h, emoji, label, tint) {
+      fillRoundRect(ctx, x, y + 4, w, h, 22, 'rgba(76,60,180,0.18)'); // drop shadow
+      fillRoundRect(ctx, x, y, w, h, 22, T.surface);
+      roundRect(ctx, x, y, w, h, 22); ctx.strokeStyle = T.border; ctx.lineWidth = 2; ctx.stroke();
+      fillRoundRect(ctx, x + w / 2 - 34, y + 22, 68, 68, 20, tint);
+      text(ctx, emoji, x + w / 2, y + 22 + 34, 42, '#fff', 800, 'center');
+      text(ctx, label, x + w / 2, y + h - 26, 22, T.text, 700, 'center');
+    }
+
+    // ---------- Screen 1: mobile home / operation picker ----------
+    function drawMobileHome(ctx, w, h) {
+      bgGradient(ctx, w, h);
+      const pad = 64;
+      header(ctx, w, pad, 96);
+      text(ctx, 'What shall we practise?', w / 2, 210, 40, T.text, 800, 'center');
+      const cols = 2, gap = 40, tileW = (w - pad * 2 - gap) / cols, tileH = 230;
+      const ops = [
+        ['+', 'Addition', T.brand],
+        ['\u2212', 'Subtraction', T.brand2],
+        ['\u00d7', 'Multiplication', T.good],
+        ['\u00f7', 'Division', T.accent],
+      ];
+      let x = pad, y = 300;
+      ops.forEach((o, i) => {
+        opTile(ctx, x, y, tileW, tileH, o[0], o[1], o[2]);
+        if (i % 2 === 0) { x += tileW + gap; } else { x = pad; y += tileH + gap; }
+      });
+      // Fun Facts + Daily Challenge wide tiles
+      opTile(ctx, pad, y, w - pad * 2, 150, '\u2b50', 'Daily Challenge', T.brand);
+      y += 150 + gap;
+      opTile(ctx, pad, y, w - pad * 2, 150, '\ud83d\udca1', 'Fun Facts', T.brand2);
+      footer(ctx, w, h);
+    }
+
+    // ---------- Screen 2: mobile play round ----------
+    function drawMobilePlay(ctx, w, h) {
+      bgGradient(ctx, w, h);
+      const pad = 64;
+      header(ctx, w, pad, 96);
+      // progress pill
+      fillRoundRect(ctx, pad, 180, w - pad * 2, 46, 23, T.surface2);
+      fillRoundRect(ctx, pad, 180, (w - pad * 2) * 0.4, 46, 23, T.brand);
+      text(ctx, 'Question 4 of 10', w / 2, 260, 26, T.textSoft, 700, 'center');
+      // question card
+      fillRoundRect(ctx, pad, 310, w - pad * 2, 260, 28, T.surface);
+      text(ctx, '7 \u00d7 8 = ?', w / 2, 440, 96, T.text, 900, 'center');
+      // 2x2 answer tiles
+      const cols = 2, gap = 36, aW = (w - pad * 2 - gap) / cols, aH = 150;
+      const answers = [['56', T.good, true], ['54', T.surface, false], ['63', T.surface, false], ['48', T.surface, false]];
+      let x = pad, y = 620;
+      answers.forEach((a, i) => {
+        fillRoundRect(ctx, x, y + 4, aW, aH, 20, 'rgba(76,60,180,0.18)');
+        fillRoundRect(ctx, x, y, aW, aH, 20, a[1]);
+        if (!a[2]) { roundRect(ctx, x, y, aW, aH, 20); ctx.strokeStyle = T.border; ctx.lineWidth = 2; ctx.stroke(); }
+        text(ctx, a[0], x + aW / 2, y + aH / 2, 56, a[2] ? '#fff' : T.text, 900, 'center');
+        if (i % 2 === 0) { x += aW + gap; } else { x = pad; y += aH + gap; }
+      });
+      // feedback
+      text(ctx, '\u2b50 Great job, Alex! That\u2019s right!', w / 2, y + 60, 30, T.good, 800, 'center');
+      footer(ctx, w, h);
+    }
+
+    // ---------- Screen 3: wide (desktop) home ----------
+    function drawWideHome(ctx, w, h) {
+      bgGradient(ctx, w, h);
+      const pad = 90;
+      header(ctx, w, pad, 90);
+      text(ctx, 'What shall we practise?', w / 2, 250, 52, T.text, 800, 'center');
+      const cols = 4, gap = 48, tileW = (w - pad * 2 - gap * (cols - 1)) / cols, tileH = 300;
+      const ops = [
+        ['+', 'Addition', T.brand],
+        ['\u2212', 'Subtraction', T.brand2],
+        ['\u00d7', 'Multiplication', T.good],
+        ['\u00f7', 'Division', T.accent],
+      ];
+      let x = pad; const y = 360;
+      ops.forEach((o) => { opTile(ctx, x, y, tileW, tileH, o[0], o[1], o[2]); x += tileW + gap; });
+      // two wide feature tiles
+      const fW = (w - pad * 2 - gap) / 2, fy = y + tileH + gap;
+      opTile(ctx, pad, fy, fW, 170, '\u2b50', 'Daily Challenge', T.brand);
+      opTile(ctx, pad + fW + gap, fy, fW, 170, '\ud83d\udca1', 'Fun Facts', T.brand2);
+      footer(ctx, w, h);
+    }
+
+    function footer(ctx, w, h) {
+      text(ctx, 'Powered by Forj\u00e9', w / 2, h - 70, 22, T.brand, 700, 'center');
+      text(ctx, '\u00a9 2026 Isaac A Gera. All rights reserved.', w / 2, h - 40, 18, T.textSoft, 500, 'center');
+    }
+
+    const TARGETS = [
+      { file: 'mobile-home.png', w: 1080, h: 1920, draw: drawMobileHome, label: 'Mobile - Home' },
+      { file: 'mobile-play.png', w: 1080, h: 1920, draw: drawMobilePlay, label: 'Mobile - Play' },
+      { file: 'wide-home.png',   w: 1920, h: 1080, draw: drawWideHome,   label: 'Wide - Home' },
+    ];
+
+    function download(canvas, file) {
+      canvas.toBlob((blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = file;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }, 'image/png');
+    }
+
+    const built = [];
+    const cards = document.getElementById('cards');
+    TARGETS.forEach((t) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = t.w; canvas.height = t.h;
+      t.draw(canvas.getContext('2d'), t.w, t.h);
+      const card = document.createElement('div'); card.className = 'card';
+      const h2 = document.createElement('h2'); h2.textContent = t.file;
+      const small = document.createElement('small'); small.textContent = t.w + '\u00d7' + t.h + ' - ' + t.label;
+      const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = 'Download';
+      btn.addEventListener('click', () => download(canvas, t.file));
+      card.append(canvas, h2, small, btn);
+      cards.appendChild(card);
+      built.push({ canvas, file: t.file });
+    });
+
+    document.getElementById('all').addEventListener('click', () => {
+      built.forEach((b, i) => setTimeout(() => download(b.canvas, b.file), i * 350));
+    });
+  </script>
+</body>
+</html>

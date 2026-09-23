@@ -4,7 +4,7 @@
 // version; bump VERSION on each release. skipWaiting + clients.claim make a new worker take
 // over promptly.
 
-const VERSION = '1.3.1';
+const VERSION = '1.3.3';
 const CACHE = `mathfun-v${VERSION}`;
 
 const ASSETS = [
@@ -15,8 +15,12 @@ const ASSETS = [
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/icon-maskable-192.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
+  './screenshots/mobile-home.png',
+  './screenshots/mobile-play.png',
+  './screenshots/wide-home.png',
   './js/app.js',
   './js/state.js',
   './js/themes.js',

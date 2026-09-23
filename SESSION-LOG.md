@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Shipped & deployed v1.1.0 (Addition, Subtraction & Multiplication; Division "coming soon") - https://isaacgera.github.io/MathFun/
+- **Status:** Built - code at v1.3.3 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes + app-store metadata + a11y polish). v1.3.x is ported and awaiting Isaac's deploy/verify on the hosted site - https://isaacgera.github.io/MathFun/
 - **Live:** https://isaacgera.github.io/MathFun/
 - **Description:** Playful maths game for kids 5-15. Multiplication 1x-20x shipped; v1.1 adds an operation picker (＋ － ✕ ÷) with full Addition & Subtraction (Division coming next). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
@@ -1214,3 +1214,66 @@ browser/Node can't run in this Windows/Kiro shell, so behavioural checks were Is
 **Status: MathFun v1.3.1 complete, documented, pushed and live-bound. Session closed.**
 Next session ideas (open): optional progress export/import; build the Pre-Live Testing Agent;
 fact-flavoured Daily Challenge questions.
+
+## v1.3.2 - App-store readiness (manifest + icons + screenshots) - 23 Sep 2026
+Isaac wants to publish MathFun to the Google Play Store and Apple App Store. Explored the options
+(TWA/PWABuilder for Android; PWABuilder/Capacitor for iOS - iOS needs a Mac + Apple Developer
+account, and Apple's "minimum functionality" review is the main risk). Agreed to first close the
+PWA gaps, then package.
+
+- **Ran the PWA Readiness Checker** (read-only) against the shipping app at `Learning/MathFun/`.
+  Verdict: **PWA-ready, zero blockers.** Service worker is registered and well built (versioned
+  cache, skipWaiting/claim, resilient per-asset precache, network-first). Only five "Should-fix"
+  manifest-completeness gaps were flagged.
+- **Closed the gaps as a Quick Spec (metadata/display only, no behaviour change), shipped as v1.3.2:**
+  - Manifest: added `id` `/MathFun/`, `lang` `en-GB`, `dir` `ltr`, `categories` `["education","games"]`.
+    (Dropped the checker's `"kids"` category - not a valid standard value; store age-rating is set in
+    the Play/App Store console, not the manifest.)
+  - Manifest: declared a **192 maskable** icon and a **`screenshots`** array (2 narrow + 1 wide).
+  - `icons/generate-icons.html` now also emits `icon-maskable-192.png`.
+  - New `screenshots/generate-screenshots.html` renders `mobile-home.png`, `mobile-play.png`,
+    `wide-home.png` from MathFun's real design tokens. Note: these are faithful token-based mockups,
+    not live device captures (a browser session is needed for true captures) - they satisfy the
+    manifest/PWABuilder/Play requirement and can be swapped for real captures using the same filenames.
+  - Bumped `APP_VERSION` and `sw.js` cache to `1.3.2`; precached the new icon + screenshots.
+  - Updated README changelog, SPEC-tasks (new Phase 10), this log.
+- **Flagged for Isaac:** the app footer copyright reads **"Nathan J Gera"**, not the usual default
+  "Isaac A Gera". Left unchanged pending confirmation (per branding rule, the holder is per-app and
+  shouldn't be assumed - e.g. ShiftPlanner is "Suneetha K").
+
+### Still to do (Isaac)
+- Run both generators over Live Server; drop the PNGs into `icons/` and `screenshots/`.
+- Confirm the footer copyright holder.
+- Deploy via GitHub Desktop; run the live URL through PWABuilder to confirm a clean manifest score,
+  then generate the Android TWA package. iOS later (needs Mac + Apple Developer account).
+
+## v1.3.3 - Accessibility polish (pre-store-submission) - 23 Sep 2026
+Isaac copied in the new icon + screenshots and ran Lighthouse: WIDE = Perf 100 / A11y 95 / BP 100 /
+SEO 100; MOBILE = Perf 93 / A11y 100 / BP 100 / SEO 100. Best Practices 100 on both confirmed the
+v1.3.2 manifest/icon work landed cleanly. To chase the wide-screen 95, ran the **Pre-Live Testing
+Agent** (read-only) - no blockers, but it pinpointed the likely causes and a few SR gaps. Isaac
+chose the fuller fix (contrast + SR).
+
+- **Copyright holder:** Isaac confirmed the footer "Nathan J Gera" is intentional for MathFun -
+  left as-is (per branding rule, holder is per-app). Noted so it isn't re-flagged.
+- **Contrast fixes (verified with WCAG maths, not just eyeballed):**
+  - Added `--good-ink` (#166534 light / #86efac dark) and `--bad-ink` (#b91c1c / #fca5a5) tokens;
+    applied to the correct/wrong answer tiles. Was ~2.9:1 (green) / ~3.6:1 (red) on the pale tints;
+    now 6.5:1 / 5.3:1 (light) and 9.0:1 / 8.0:1 (dark). Borders/icons keep the vivid --good/--bad.
+  - Darkened light-theme `--text-soft` #5b5f7a -> #4c4f68 so small muted/footer text clears 4.5:1
+    on the palest skins (~7.3:1 on Candy/Ocean/Dino). Note: the flat old colour already passed
+    (~5.7:1); the real dip came from the emoji-pattern layer behind the text, so the extra headroom
+    is the right call.
+- **Screen-reader fixes:** `#questionText` -> `aria-live="polite" aria-atomic="true"` (new question
+  now announced; was silent); `#progressText` -> `role="status" aria-live="polite"`; each answer
+  button now has an explicit `aria-label` ("Answer N: value") instead of a lone number.
+- Bumped `APP_VERSION` + cache to 1.3.3; updated README changelog + SPEC-tasks (Phase 11).
+- **Verification done here:** manifest still valid JSON; contrast ratios computed and all PASS.
+  **Not done here (Isaac to confirm live):** re-run Lighthouse a11y on wide (expect 100), axe
+  DevTools on a light skin mid-round, and an NVDA/VoiceOver spot-check of the announcements.
+- **Deferred (nice-to-have):** dropdown menu arrow-key roving (N1) and modal focus trapping (N2).
+
+### Still to do (Isaac)
+- Deploy v1.3.3 via GitHub Desktop; re-run Lighthouse wide + a quick SR check.
+- Then run the live URL through PWABuilder to generate the Android TWA package. iOS later
+  (needs a Mac + Apple Developer account).

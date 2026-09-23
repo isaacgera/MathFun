@@ -105,6 +105,34 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.3.3 - 23 Sep 2026
+- **Accessibility polish (pre-store-submission).** Following a read-only Pre-Live audit and a
+  wide-screen Lighthouse Accessibility 95:
+  - **Contrast:** the correct/wrong answer tiles now use darkened on-tint text tokens
+    (`--good-ink` / `--bad-ink`) so the answer digits clear WCAG 4.5:1 on the pale green/red
+    tints (previously ~2.9:1 / ~3.6:1). Verified: light 6.5:1 / 5.3:1, dark 9.0:1 / 8.0:1.
+  - **Contrast:** `--text-soft` (light theme) darkened slightly so small muted/footer text keeps
+    >=4.5:1 on the palest character skins (Candy/Ocean/Dino), not just on white (~7.3:1 now).
+  - **Screen readers:** the question region is now an `aria-live="polite"` announcement (was
+    `off`, so the next question was silent); "Question N of 10" is a `role="status"` live region;
+    and each answer button has an explicit `aria-label` ("Answer 1: 8") instead of a bare number.
+- No behaviour or layout change; cache bumped to `mathfun-v1.3.3`.
+
+### v1.3.2 - 23 Sep 2026
+- **Store-readiness (metadata only, no behaviour change).** Rounded out the web app manifest so
+  MathFun packages cleanly for the Google Play Store (via a Trusted Web Activity / PWABuilder) and
+  the Apple App Store:
+  - Added `id` (`/MathFun/`), `lang` (`en-GB`), `dir` (`ltr`) and `categories`
+    (`education`, `games`) to `manifest.webmanifest`.
+  - Added a **192 maskable** icon (`icons/icon-maskable-192.png`) alongside the existing 512,
+    for more robust Android adaptive icons; the `icons/generate-icons.html` helper now emits it.
+  - Added a **`screenshots`** array (two mobile + one wide) for the store listing / PWABuilder
+    install UI, with a new `screenshots/generate-screenshots.html` helper that renders them from
+    MathFun's own design tokens. These can be swapped for real device captures using the same
+    filenames later.
+- Cache bumped to `mathfun-v1.3.2` so the network-first service worker re-caches the updated
+  manifest and new assets for installed users.
+
 ### v1.3.1 - 12 Sep 2026
 - **Bug fix:** the player menu (chip, top-right) and the header **Home** button didn't respond to
   taps/clicks where they overlapped the page content. Root cause was a z-index stacking bug in the
