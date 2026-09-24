@@ -1,6 +1,6 @@
 ﻿# MathFun - Tasks
 
-- **Tier:** Simple | **Status:** Shipped v1.3.1 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes) | **Workflow:** prototype-first.
+- **Tier:** Simple | **Status:** Shipped v1.3.3 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes + app-store metadata + a11y polish); **Google Play packaging in progress** | **Workflow:** prototype-first.
 - **Live:** https://isaacgera.github.io/MathFun/
 - Shipping app at `Learning/MathFun/` root; the sandbox it was built in is kept at `Learning/MathFun/prototypes/` (git-ignored, not published).
 
@@ -164,6 +164,26 @@ desktop-specific contrast + screen-reader gaps). Prompted by wide-screen Lightho
 - [ ] Isaac: re-run Lighthouse a11y on wide (expect 100) + axe DevTools on a light skin mid-round
 - [ ] Isaac: SR spot-check (NVDA/VoiceOver) that question + progress are announced
 - [ ] (Deferred, nice-to-have) Menu arrow-key roving (N1) + modal focus trap (N2)
+
+## Phase 12 - Google Play publishing (packaging/submission, no app code change)
+Packaging the shipped v1.3.3 PWA as a Trusted Web Activity for the Google Play Store.
+- [x] PWABuilder audit of the live URL - manifest green ring, SW passed, no blockers
+- [x] Generate Android package (Package ID `isaacgera.mathfun`, new signing key); download
+      `MathFun.aab` / `.apk` / `signing.keystore` / `signing-key-info.txt` / `assetlinks.json`
+- [x] Move package + signing secrets OUT of the git repo; add `.gitignore` guard; verify key was
+      never committed
+- [x] Sideload-test `MathFun.apk` on Android (works; browser bar expected pre-Digital-Asset-Links)
+- [x] iOS confirmed via Safari "Add to Home Screen" (full-screen PWA)
+- [x] Draft store listing content (`Android-Store-Listing.md`, kept beside the package)
+- [ ] Play Console registration - Personal account (D-U-N-S avoided); **pending Google verification**
+- [ ] Write `privacy.html` (MANDATORY for a child-directed app) + host on Pages
+- [ ] Create 1024x500 feature graphic (required by Play)
+- [ ] Confirm public developer name + contact email
+- [ ] Upload `MathFun.aab` to Internal testing; add tester; verify via opt-in link
+- [ ] Digital Asset Links: SHA-256 from Play Console > App integrity -> `assetlinks.json` hosted at
+      `isaacgera.github.io/.well-known/assetlinks.json` (root Pages repo) so the browser bar goes
+- [ ] Promote Internal testing -> Production once review passes
+- [ ] (Later, separate project) iOS App Store via a Mac + Xcode + $99/yr Apple Developer account
 
 ## Nice-to-have / later
 - [x] Store-quality raster icons (192 / 512 / maskable PNGs) + iOS apple-touch icon (v1.0.7);

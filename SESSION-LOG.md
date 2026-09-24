@@ -1277,3 +1277,44 @@ chose the fuller fix (contrast + SR).
 - Deploy v1.3.3 via GitHub Desktop; re-run Lighthouse wide + a quick SR check.
 - Then run the live URL through PWABuilder to generate the Android TWA package. iOS later
   (needs a Mac + Apple Developer account).
+
+## App-store packaging - Google Play journey (v1.3.3, no code change) - 23 Sep 2026
+Began publishing MathFun to the Google Play Store. No app code changed this session - this was
+packaging, testing and store-registration work on the already-shipped v1.3.3 build.
+
+- **Confirmed v1.3.3 live** on GitHub Pages (carrying the ported v1.3.0/1.3.1/1.3.2 work live too);
+  set `Ideas.md` row to **Built (MathFun v1.3.3)** with the store-readiness + a11y scope note.
+- **PWABuilder audit** of the live URL: Manifest scored 28/46 with a GREEN ring (that number is
+  optional-field points, not a %; all *required* fields pass), Service Worker passed (+3 bonus),
+  App Capabilities is info-only. Manifest section showed only amber/optional items, no red. No blockers.
+- **Generated the Android package** via PWABuilder - Package ID `isaacgera.mathfun` (Personal,
+  permanent), signing key = New. Zip contained: `MathFun.aab` (upload to Play), `MathFun.apk`
+  (sideload test build), `signing.keystore` + `signing-key-info.txt` (SECRETS), `assetlinks.json`,
+  `Readme.html`.
+- **Signing-key safety:** the package was first extracted INSIDE the MathFun git repo. Verified via
+  git that the keystore was NEVER committed/pushed (clean history, no push after download). Isaac
+  moved the whole package folder OUT to `...\Kiro\Google-Android Packages\` (outside the Projects
+  workspace). Added a `.gitignore` guard (blocks `*.keystore`, `*.aab`, `*.apk`,
+  `signing-key-info.txt`, and the package folder) as belt-and-braces. Key is clean - no regeneration.
+- **Device testing:** Isaac sideloaded `MathFun.apk` on an Android phone - runs, plays, looks right
+  (a browser address bar shows at top, which is EXPECTED until Digital Asset Links are set up). iOS
+  was also confirmed earlier via Safari "Add to Home Screen" - full-screen PWA, works fine.
+- **Play Console registration:** hit a D-U-N-S number request (that's the Organisation account type);
+  switched to **Personal/Individual**, which removed it. Reached payment; account is now **PENDING
+  Google identity verification** (Google's side, hours-to-days).
+- **Listing content drafted** and saved to
+  `...\Google-Android Packages\MathFun - Google Play package\Android-Store-Listing.md` (outside the repo).
+
+### Still to do (next session / when the account clears)
+- Google identity verification to complete (Google's side).
+- **`privacy.html`** for MathFun - MANDATORY for a child-directed app; host at
+  `isaacgera.github.io/MathFun/privacy.html` ("no data collected, on-device only, no tracking/ads").
+- **1024x500 feature graphic** - required by Play; make via a canvas generator like the screenshots.
+- Confirm public developer name + contact email.
+- Upload `MathFun.aab` to the **Internal testing** track; add Isaac as tester; test via the opt-in
+  link (the real, bar-free test).
+- **Digital Asset Links:** after upload, take the SHA-256 from Play Console > App integrity, put it
+  in `assetlinks.json`, host at `isaacgera.github.io/.well-known/assetlinks.json` (root Pages repo,
+  NOT the MathFun repo) so the browser address bar disappears.
+- **iOS App Store** is a LATER, separate project (needs a Mac + Xcode + $99/yr Apple Developer
+  account; Apple's minimum-functionality review is the main risk).
