@@ -151,12 +151,75 @@ export const THEMES = {
     // robot, alien monster, gear, battery, bulb, satellite, floppy, magnet, nut+bolt, joystick
     avatars: ['\uD83E\uDD16', '\uD83D\uDC7E', '\u2699\uFE0F', '\uD83D\uDD0B', '\uD83D\uDCA1', '\uD83D\uDEF0\uFE0F', '\uD83D\uDCBE', '\uD83E\uDDF2', '\uD83D\uDD29', '\uD83D\uDD79\uFE0F'],
   },
+
+  // ---- v1.4 NEW themes (original, trademark-safe vibe-alikes) ----
+
+  // ---- Honey Woods (cosy bear + honey vibe, Pooh-flavoured but original) ----
+  honey: {
+    key: 'honey', name: 'Honey Woods', emoji: '\uD83C\uDF6F', // honey pot
+    tagline: 'Cosy bears & honey pots',
+    tune: 'honey',
+    ops:  { add: '\uD83D\uDC3B', sub: '\uD83D\uDC1D', mul: '\uD83C\uDF6F', div: '\uD83C\uDF88' }, // bear, bee, honey, balloon
+    tabs: { facts: '\uD83C\uDF42', daily: '\uD83C\uDF6F' },                                        // leaf, honey
+    hintIcon: '\uD83C\uDF6F',
+    // bear, bee, honey, balloon, piglet, rabbit, owl, donkey, tree, leaf
+    avatars: ['\uD83D\uDC3B', '\uD83D\uDC1D', '\uD83C\uDF6F', '\uD83C\uDF88', '\uD83D\uDC37', '\uD83D\uDC30', '\uD83E\uDD89', '\uD83E\uDEAB', '\uD83C\uDF33', '\uD83C\uDF42'],
+  },
+
+  // ---- Kart Racers (go-kart vibe, Mario-Kart-flavoured but original) ----
+  kart: {
+    key: 'kart', name: 'Kart Racers', emoji: '\uD83C\uDFCE\uFE0F', // race car
+    tagline: 'Speedy karts & finish lines',
+    tune: 'kart',
+    ops:  { add: '\uD83C\uDFCE\uFE0F', sub: '\uD83C\uDFC1', mul: '\uD83C\uDFC6', div: '\uD83D\uDEDE' }, // car, flag, trophy, wheel
+    tabs: { facts: '\u2B50', daily: '\uD83C\uDFC1' },                                                    // star, flag
+    hintIcon: '\uD83C\uDFCE\uFE0F',
+    // car, flag, trophy, wheel, fuel, cone, boom, star, stopwatch, medal
+    avatars: ['\uD83C\uDFCE\uFE0F', '\uD83C\uDFC1', '\uD83C\uDFC6', '\uD83D\uDEDE', '\u26FD', '\uD83D\uDEA7', '\uD83D\uDCA5', '\u2B50', '\u23F1\uFE0F', '\uD83C\uDFC5'],
+  },
+
+  // ---- Piggy Puddles (little pig + muddy puddle vibe, Peppa-flavoured but original) ----
+  piggy: {
+    key: 'piggy', name: 'Piggy Puddles', emoji: '\uD83D\uDC37', // pig face
+    tagline: 'Jumping in muddy puddles',
+    tune: 'piggy',
+    ops:  { add: '\uD83D\uDC37', sub: '\uD83C\uDF02', mul: '\uD83C\uDF08', div: '\uD83E\uDD53' }, // pig, umbrella, rainbow, bacon(family)
+    tabs: { facts: '\uD83C\uDF3C', daily: '\uD83D\uDC37' },                                        // flower, pig
+    hintIcon: '\uD83D\uDC37',
+    // pig, pig-nose, umbrella, rainbow, boot, flower, duck, sheep, house, puddle(droplet)
+    avatars: ['\uD83D\uDC37', '\uD83D\uDC3D', '\uD83C\uDF02', '\uD83C\uDF08', '\uD83E\uDD7E', '\uD83C\uDF3C', '\uD83E\uDD86', '\uD83D\uDC11', '\uD83C\uDFE0', '\uD83D\uDCA7'],
+  },
+
+  // ---- Robo Cat (cute blue gadget cat from the future, Doraemon-flavoured but original) ----
+  robocat: {
+    key: 'robocat', name: 'Robo Cat', emoji: '\uD83D\uDC31', // cat face
+    tagline: 'A gadget cat from the future',
+    tune: 'robocat',
+    ops:  { add: '\uD83D\uDC31', sub: '\uD83D\uDD14', mul: '\uD83D\uDEAA', div: '\uD83E\uDE84' }, // cat, bell, (any)door, wand(gadget)
+    tabs: { facts: '\uD83D\uDD2E', daily: '\uD83D\uDE80' },                                        // crystal ball, rocket
+    hintIcon: '\uD83D\uDD14',
+    // cat, bell, door, wand, rocket, crystal ball, pocket(bag), clock, gift, star
+    avatars: ['\uD83D\uDC31', '\uD83D\uDD14', '\uD83D\uDEAA', '\uD83E\uDE84', '\uD83D\uDE80', '\uD83D\uDD2E', '\uD83D\uDC5C', '\u23F0', '\uD83C\uDF81', '\u2B50'],
+  },
+
+  // ---- Little Explorer (bright curious-toddler + pets vibe, Pocoyo-flavoured but original) ----
+  explorer: {
+    key: 'explorer', name: 'Little Explorer', emoji: '\uD83E\uDDD2', // child
+    tagline: 'A curious kid & friendly pets',
+    tune: 'explorer',
+    ops:  { add: '\uD83E\uDDD2', sub: '\uD83D\uDC25', mul: '\uD83D\uDC36', div: '\uD83D\uDC18' }, // child, duckling, dog, elephant
+    tabs: { facts: '\uD83C\uDF88', daily: '\uD83C\uDF1F' },                                        // balloon, star
+    hintIcon: '\uD83E\uDDD2',
+    // child, duckling, dog, elephant, balloon, ball, teddy, drum, crayon, star
+    avatars: ['\uD83E\uDDD2', '\uD83D\uDC25', '\uD83D\uDC36', '\uD83D\uDC18', '\uD83C\uDF88', '\u26BD', '\uD83E\uDDF8', '\uD83E\uDD41', '\uD83D\uDD8D\uFE0F', '\uD83C\uDF1F'],
+  },
 };
 
-// Picker/menu order (default first, then the fun ones).
+// Picker/menu order (default first, then the fun ones; v1.4 themes appended).
 export const THEME_ORDER = [
   'math', 'plumber', 'dino', 'hedgehog', 'magic',
   'space', 'ocean', 'jungle', 'candy', 'robot',
+  'honey', 'kart', 'piggy', 'robocat', 'explorer',
 ];
 
 // Safe lookup - unknown/empty keys fall back to the default Math World theme.

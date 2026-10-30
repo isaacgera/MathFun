@@ -105,6 +105,28 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
 `VERSION` in `sw.js` (the cache name derives from it) so updates reach installed users.
 
 ## Changelog
+### v1.4.0 - 30 Oct 2026
+- **Animated theme character on the play screen.** The progress line is now a hopscotch
+  **board of 10 numbered boxes**, framed as a single "wagon" with soft rounded ends. The active
+  theme's little **drawn SVG character** sits in the current box and **hops to the next box** as
+  the round advances - it does a joyful double-hop (with a small **confetti** burst) on a correct
+  answer and a stumble-and-recover on a wrong one. Completed boxes remember the result
+  (green tick = correct, amber dot = wrong). Tap/hover the character and it waves **hello**. A
+  bigger confetti burst celebrates the results screen (scaled by stars). All inline SVG + canvas,
+  fully offline, trademark-safe, and reduced-motion-safe.
+- **5 new character themes** (15 total): **Honey Woods**, **Kart Racers**, **Piggy Puddles**,
+  **Robo Cat** and **Little Explorer** - each original/trademark-safe, with its own palette
+  (light + dark), background pattern, avatars, tile emoji, a distinct synth tune, and a matching
+  character sprite.
+- **User-prompted updates.** Installed PWAs no longer silently auto-reload: when a new version is
+  ready, a small bottom **"A new version is ready - Update?"** toast appears (Update now / Later).
+  The service worker now waits for the user's choice (`SKIP_WAITING` message) instead of skipping
+  waiting automatically. (Note: because the *old* worker governs the current hand-off, this prompt
+  first appears for users on the release *after* this one; existing users get v1.4.0 via the
+  previous silent reload.)
+- New modules `js/sprites.js` (15 characters) and `js/confetti.js`; cache bumped to
+  `mathfun-v1.4.0` (now also precaching the two new modules).
+
 ### v1.3.3 - 23 Sep 2026
 - **Accessibility polish (pre-store-submission).** Following a read-only Pre-Live audit and a
   wide-screen Lighthouse Accessibility 95:

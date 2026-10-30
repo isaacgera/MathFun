@@ -6,6 +6,8 @@ import { BADGES } from './rewards.js';
 import { gridData } from './mastery.js';
 import { OPERATIONS, OP_ORDER, getOperation, LEVEL_LABELS, LEVEL_EMOJI, levelTitle } from './operations.js';
 import { THEMES, THEME_ORDER, getTheme, opEmoji, tabEmoji, themeAvatars } from './themes.js';
+import { spriteFor } from './sprites.js';
+import * as confetti from './confetti.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -307,13 +309,27 @@ export function renderThemeDialog(current, handlers) {
 }
 
 // ---- Play ----
-export function renderPlayShell(container, mode) {
+// v1.4: the progress line is a hopscotch "board" of 10 numbered boxes framed as one wagon.
+// The active theme's drawn SVG character ("runner") sits in the current box and HOPS to the
+// next box as the round advances; it jumps for joy (+ confetti) on a correct answer, stumbles
+// on a wrong one, and waves hello on hover/tap. Completed boxes remember the result (tick =
+// correct, dot = wrong). All offline, theme-tinted, reduced-motion-safe.
+export function renderPlayShell(container, mode, skin = 'math') {
+  const boxes = Array.from({ length: ROUND_SIZE }, (_, i) => `
+    <div class="qbox" data-box="${i}">
+      <span class="qbox-num">${i + 1}</span>
+      <span class="qbox-mark" aria-hidden="true"></span>
+    </div>`).join('');
   container.innerHTML = `
     <div class="play-top">
       <button class="btn btn-ghost btn-back" id="quitBtn" aria-label="Stop and go back to home" title="Back to home">\u2190</button>
       <div class="mode-tag">${modeLabel(mode)}</div>
     </div>
-    <div class="progress" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="qboard" id="qboard">
+      <div class="qbox-row" aria-hidden="true">${boxes}</div>
+      <div class="runner" id="runner" data-mood="idle" role="button" tabindex="0"
+        aria-label="Say hello to your character" title="Say hello!">${spriteFor(skin)}</div>
+    </div>
     <div class="progress-text" id="progressText" role="status" aria-live="polite"></div>
     <div class="timer-wrap hidden" id="timerWrap"><div class="timer-bar" id="timerBar"></div></div>
     <div class="question" id="questionText" aria-live="polite" aria-atomic="true"></div>
@@ -322,11 +338,91 @@ export function renderPlayShell(container, mode) {
     <div class="feedback" id="feedback" aria-live="polite"></div>
   `;
   $('#quitBtn', container).addEventListener('click', () => window.MathFun.goHome());
+  wireRunnerGreet(container);
+}
+
+// v1.4: tap / click / keyboard "hello wave". Desktop also waves on hover (CSS). On touch
+// there's no hover, so a tap adds .greet for one play; re-armed after it finishes. Skipped
+// while the character is mid hop/stumble (data-mood !== idle) so reactions win.
+function wireRunnerGreet(container) {
+  const runner = $('#runner', container);
+  if (!runner) return;
+  const greet = () => {
+    if (runner.getAttribute('data-mood') !== 'idle' || runner.classList.contains('react')) return;
+    runner.classList.remove('greet');
+    void runner.offsetWidth;        // restart the one-shot animation
+    runner.classList.add('greet');
+    runner.addEventListener('animationend', () => runner.classList.remove('greet'), { once: true });
+    setTimeout(() => runner.classList.remove('greet'), 1200); // fallback (e.g. reduced motion)
+  };
+  runner.addEventListener('click', greet);
+  runner.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); greet(); }
+  });
+}
+
+// Centre the runner horizontally over a given box (0-based). Measured from the live DOM so it
+// stays correct across widths; a CSS left-transition makes it glide/hop. Retries on the next
+// frame if the board isn't laid out yet (zero width), so the runner never lands at 0.
+function positionRunnerToBox(container, boxIndex) {
+  const runner = $('#runner', container);
+  const board = $('#qboard', container);
+  const box = board && board.querySelector(`.qbox[data-box="${boxIndex}"]`);
+  if (!runner || !board || !box) return;
+  const boardRect = board.getBoundingClientRect();
+  const boxRect = box.getBoundingClientRect();
+  if (boxRect.width === 0) {
+    const tries = (positionRunnerToBox._tries || 0) + 1;
+    if (tries <= 5) {
+      positionRunnerToBox._tries = tries;
+      requestAnimationFrame(() => positionRunnerToBox(container, boxIndex));
+    }
+    return;
+  }
+  positionRunnerToBox._tries = 0;
+  const centre = (boxRect.left - boardRect.left) + boxRect.width / 2;
+  runner.style.left = `${centre}px`;
+}
+
+// Mark the current box as active (and clear the flag from the others).
+function setActiveBox(container, boxIndex) {
+  const board = $('#qboard', container);
+  if (!board) return;
+  board.querySelectorAll('.qbox').forEach((b) => {
+    b.classList.toggle('current', Number(b.dataset.box) === boxIndex);
+  });
+}
+
+// Record how a box went once answered: tick for correct, soft marker for wrong.
+function markBox(container, boxIndex, correct) {
+  const board = $('#qboard', container);
+  const box = board && board.querySelector(`.qbox[data-box="${boxIndex}"]`);
+  if (!box) return;
+  box.classList.add('done', correct ? 'done-correct' : 'done-wrong');
+}
+
+// Play a one-shot hop/stumble on the runner, then return to idle. The bouncy keyframes are
+// skipped by the @media (prefers-reduced-motion) rule; the box-to-box move still happens.
+function runnerReact(container, mood) {
+  const runner = $('#runner', container);
+  if (!runner) return;
+  runner.setAttribute('data-mood', mood);
+  runner.classList.remove('react');
+  void runner.offsetWidth;          // restart the animation reliably
+  runner.classList.add('react');
+  const clear = () => { runner.classList.remove('react'); runner.setAttribute('data-mood', 'idle'); };
+  runner.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1300);          // fallback if animationend doesn't fire (reduced motion)
+  // Small confetti burst from the character at the top of its happy hop (no-ops under RM).
+  if (mood === 'happy') {
+    setTimeout(() => confetti.burstFromElement(runner, { count: 22, spread: 150, power: 6 }), 260);
+  }
 }
 
 export function renderQuestion(container, round) {
   $('#progressText', container).textContent = `Question ${round.index + 1} of ${ROUND_SIZE}`;
-  $('#progressBar', container).style.width = `${(round.index / ROUND_SIZE) * 100}%`;
+  setActiveBox(container, round.index);            // highlight the box we're on
+  positionRunnerToBox(container, round.index);     // v1.4: runner sits in / hops to this box
   $('#questionText', container).textContent = `${round.current.text} = ?`;
   $('#feedback', container).textContent = '';
   $('#feedback', container).className = 'feedback';
@@ -346,7 +442,9 @@ export function renderQuestion(container, round) {
   });
 }
 
-export function showFeedback(container, result, correctValue, profile = null) {
+// questionIndex = the 0-based box that was just answered (round.index before it advances),
+// so we can mark the correct box. Falls back gracefully if not provided.
+export function showFeedback(container, result, correctValue, profile = null, questionIndex = null) {
   const fb = $('#feedback', container);
   const opts = $('#options', container);
   opts.querySelectorAll('.option').forEach((b) => {
@@ -355,12 +453,15 @@ export function showFeedback(container, result, correctValue, profile = null) {
     if (v === correctValue) b.classList.add('is-correct');
     if (!result.correct && v === result.chosen) b.classList.add('is-wrong');
   });
+  if (questionIndex != null) markBox(container, questionIndex, result.correct); // v1.4: box memory
   if (result.correct) {
     fb.textContent = pickPraise(profile);
     fb.classList.add('good');
+    runnerReact(container, 'happy'); // v1.4: jump for joy + confetti
   } else {
     fb.textContent = pickEncourage(profile, correctValue);
     fb.classList.add('bad');
+    runnerReact(container, 'sad');   // v1.4: stumble-and-recover (stays on the box)
   }
 }
 
@@ -456,6 +557,53 @@ export function renderResults(container, data, handlers) {
   `;
   $('#againBtn', container).addEventListener('click', handlers.onAgain);
   $('#homeBtn', container).addEventListener('click', handlers.onHome);
+
+  // v1.4: a bigger celebration burst on the results screen, scaled by stars (a perfect
+  // 3-star round gets a double side-pop). confetti.burst no-ops under prefers-reduced-motion.
+  const cx = window.innerWidth / 2;
+  const base = 40 + data.stars * 20; // 40..100 pieces
+  setTimeout(() => confetti.burst({ x: cx, y: window.innerHeight * 0.32, count: base, spread: 200, power: 9 }), 180);
+  if (data.stars >= 3) {
+    setTimeout(() => confetti.burst({ x: cx * 0.6, y: window.innerHeight * 0.4, count: 50, spread: 160, power: 8 }), 460);
+    setTimeout(() => confetti.burst({ x: cx * 1.4, y: window.innerHeight * 0.4, count: 50, spread: 160, power: 8 }), 620);
+  }
+}
+
+// ---- "Update available" toast (v1.4) ----
+// A small bottom toast telling the user a new version is ready, with an Update button and a
+// dismiss. onUpdate activates the waiting service worker; onDismiss removes the toast for this
+// session (it reappears next launch while the worker is still waiting). role="status" so it's
+// announced; the Update button takes focus.
+export function showUpdateToast({ onUpdate, onDismiss } = {}) {
+  if (document.getElementById('updateToast')) return; // never stack two
+  const host = document.createElement('div');
+  host.id = 'updateToast';
+  host.className = 'update-toast';
+  host.setAttribute('role', 'status');
+  host.setAttribute('aria-live', 'polite');
+  host.innerHTML = `
+    <span class="update-toast-text">\u2728 A new version of MathFun is ready.</span>
+    <div class="update-toast-actions">
+      <button type="button" class="btn btn-play update-toast-update" id="updateNowBtn">Update</button>
+      <button type="button" class="update-toast-dismiss" id="updateLaterBtn" aria-label="Dismiss - update later">Later</button>
+    </div>`;
+  document.body.appendChild(host);
+  requestAnimationFrame(() => host.classList.add('show'));
+
+  const close = () => {
+    host.classList.remove('show');
+    const done = () => host.remove();
+    host.addEventListener('transitionend', done, { once: true });
+    setTimeout(done, 400); // fallback if transitionend doesn't fire (reduced motion)
+  };
+  const updateBtn = $('#updateNowBtn', host);
+  updateBtn.addEventListener('click', () => {
+    updateBtn.disabled = true;
+    updateBtn.textContent = 'Updating\u2026';
+    onUpdate && onUpdate();
+  });
+  $('#updateLaterBtn', host).addEventListener('click', () => { close(); onDismiss && onDismiss(); });
+  updateBtn.focus();
 }
 
 // ---- Progress (operation-aware) ----

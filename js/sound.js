@@ -195,6 +195,53 @@ const TUNES = {
     ],
     BASS: [N.C3, N.C3, N.C3, N.G2],
   },
+
+  // ---- v1.4 NEW theme tunes ----
+  // Honey Woods - gentle, warm, slow mid sine lullaby (cosy, no hat).
+  honey: {
+    stepMs: 230, lead: 'sine', hat: false,
+    LEAD: [
+      N.F4, null, N.A4, null,  N.C5, null, N.A4, null,
+      N.G4, null, N.B4, null,  N.D5, null, N.C5, null,
+    ],
+    BASS: [N.F3, N.F3, N.G3, N.C3],
+  },
+  // Kart Racers - fast, driving, revvy square chase (strong groove).
+  kart: {
+    stepMs: 105, lead: 'square', hat: true,
+    LEAD: [
+      N.E5, N.G5, N.E5, N.A5,  N.G5, N.E5, N.D5, N.E5,
+      N.C5, N.E5, N.C5, N.G5,  N.E5, N.C5, N.B4, N.C5,
+    ],
+    BASS: [N.A2, N.A2, N.E3, N.E3],
+  },
+  // Piggy Puddles - playful, light, mid-high triangle skip (splashy groove).
+  piggy: {
+    stepMs: 160, lead: 'triangle', hat: true,
+    LEAD: [
+      N.G4, N.B4, N.D5, N.B4,  N.C5, N.E5, N.C5, null,
+      N.A4, N.C5, N.E5, N.C5,  N.D5, N.B4, N.G4, null,
+    ],
+    BASS: [N.G3, N.G3, N.C3, N.D3],
+  },
+  // Robo Cat - quirky, bright, bouncy square gadget tune.
+  robocat: {
+    stepMs: 140, lead: 'square', hat: true,
+    LEAD: [
+      N.D5, N.F5, N.A5, N.F5,  N.G5, N.E5, N.C5, null,
+      N.E5, N.G5, N.B5, N.G5,  N.A5, N.F5, N.D5, null,
+    ],
+    BASS: [N.D3, N.D3, N.G3, N.A3],
+  },
+  // Little Explorer - sunny, simple, happy mid sine toddle (calm, light hat).
+  explorer: {
+    stepMs: 190, lead: 'sine', hat: true,
+    LEAD: [
+      N.C5, N.D5, N.E5, N.G5,  N.E5, N.D5, N.C5, null,
+      N.G4, N.A4, N.C5, N.E5,  N.D5, N.C5, N.G4, null,
+    ],
+    BASS: [N.C3, N.G3, N.A3, N.G3],
+  },
 };
 
 const DEFAULT_THEME_KEY = 'math';

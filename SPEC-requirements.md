@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Shipped v1.3.0 (Addition, Subtraction, Multiplication & Division + Fun Facts + Daily Challenge + Character Themes) - https://isaacgera.github.io/MathFun/
+- **Status:** v1.4.0 code-complete (animated play-screen character on a 10-box board, confetti, 15 character themes, user-prompted update toast) - awaiting live verify; prior shipped v1.3.x (Addition, Subtraction, Multiplication & Division + Fun Facts + Daily Challenge + Character Themes) - https://isaacgera.github.io/MathFun/
 - **Audience:** School-going children (fun-first, not a dry drill).
 
 ## Summary

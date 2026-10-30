@@ -1,6 +1,6 @@
 ﻿# MathFun - Tasks
 
-- **Tier:** Simple | **Status:** Shipped v1.3.3 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes + app-store metadata + a11y polish); **Google Play packaging in progress** | **Workflow:** prototype-first.
+- **Tier:** Simple | **Status:** Code-complete v1.4.0 (animated play-screen character on a 10-box "wagon" board, hop/stumble/greet + confetti, 15 character themes, user-prompted update toast) - awaiting Isaac's live verify; prior shipped v1.3.3 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes + app-store metadata + a11y polish); **Google Play packaging in progress** | **Workflow:** prototype-first.
 - **Live:** https://isaacgera.github.io/MathFun/
 - Shipping app at `Learning/MathFun/` root; the sandbox it was built in is kept at `Learning/MathFun/prototypes/` (git-ignored, not published).
 

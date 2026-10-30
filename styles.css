@@ -9,20 +9,12 @@
   --good-bg: #dcfce7;
   --bad: #dc2626;
   --bad-bg: #fee2e2;
-  /* Text colours for use ON the pale correct/wrong tints - darkened so short answer
-     digits clear WCAG 4.5:1 on --good-bg / --bad-bg (the tint colours themselves are
-     kept for borders/icons elsewhere). */
-  --good-ink: #166534;
-  --bad-ink: #b91c1c;
 
   --bg: #f5f3ff;
   --surface: #ffffff;
   --surface-2: #f1eefe;
   --text: #1f2340;
-  /* Slightly darker than the old #5b5f7a so small muted/footer text keeps >=4.5:1 on the
-     palest skin backgrounds (Candy/Ocean/Dino) too, not just on white. Dark themes override
-     --text-soft below, so this only affects light. */
-  --text-soft: #4c4f68;
+  --text-soft: #5b5f7a;
   --border: #e5e1f7;
 
   --radius: 18px;
@@ -55,9 +47,6 @@
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
     --good-bg: #143a24;
     --bad-bg: #401b1b;
-    /* On the dark tints, ink must be light to keep 4.5:1. */
-    --good-ink: #86efac;
-    --bad-ink: #fca5a5;
     --m-new: #475069;
   }
 }
@@ -66,7 +55,6 @@
   --text: #f0f1fb; --text-soft: #a6abcf; --border: #333863;
   --shadow: 0 6px 20px rgba(0,0,0,.4); --shadow-sm: 0 2px 8px rgba(0,0,0,.35);
   --good-bg: #143a24; --bad-bg: #401b1b; --m-new: #475069;
-  --good-ink: #86efac; --bad-ink: #fca5a5;
 }
 
 * { box-sizing: border-box; }
@@ -88,14 +76,12 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px var(--space);
 }
-.brand {
-  display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 1.3rem;
-  background: none; border: none; padding: 0; cursor: pointer;
-}
-/* The mark is the actual app icon (SVG) - no gradient box behind it, so it blends with the page. */
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 1.3rem; }
 .brand-mark {
-  display: block; width: 34px; height: 34px; border-radius: 10px;
-  background: transparent;
+  display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: #fff; font-weight: 900;
 }
 .brand-name { background: linear-gradient(135deg, var(--brand), var(--brand-2));
   -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -190,6 +176,16 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 }
 .toggle-label { font-weight: 800; }
 
+/* Three toggles side by side (Timer / Sound / Music) */
+.toggles-row { flex-direction: row; gap: 10px; }
+.toggles-row .toggle-row {
+  flex: 1; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 12px 6px; text-align: center;
+}
+.toggles-row .toggle-label { font-size: 0.9rem; }
+.toggles-row .switch { flex-direction: column; gap: 6px; }
+.toggles-row .switch-state { min-width: 0; text-align: center; }
+
 /* On/Off switch */
 .switch {
   display: flex; align-items: center; gap: 10px;
@@ -222,10 +218,19 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .modal {
   background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: var(--space-lg); width: 100%; max-width: 460px;
-  max-height: 90vh; overflow-y: auto;
+  max-height: 92vh; overflow-y: auto;
 }
+/* Theme picker needs more room for all themes - widen the modal on bigger screens so
+   the whole set fits without scrolling (v1.3 round 6). */
+.modal.modal-wide { max-width: 560px; }
+@media (min-width: 700px) { .modal.modal-wide { max-width: 760px; } }
+@media (min-width: 1000px) { .modal.modal-wide { max-width: 900px; } }
 .modal h2 { text-align: center; }
+/* 1-20 number tiles: 5-up on phones (4 rows), more columns on wider screens so the whole
+   set stays compact and never needs scrolling. Pair with .modal-wide on the dialog. */
 .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: var(--space) 0; }
+@media (min-width: 560px) { .table-grid { grid-template-columns: repeat(7, 1fr); } }
+@media (min-width: 820px) { .table-grid { grid-template-columns: repeat(10, 1fr); } }
 .table-tile {
   aspect-ratio: 1; font: inherit; font-weight: 900; font-size: 1.2rem; cursor: pointer;
   background: var(--surface); color: var(--text);
@@ -245,9 +250,156 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 /* ---------- Play ---------- */
 .play-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .mode-tag { font-weight: 800; color: var(--text-soft); }
-.progress { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
-.progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--brand), var(--brand-2)); transition: width var(--transition); }
+
+/* ---------- v1.4: hopscotch "board" of 10 numbered boxes + theme runner ----------
+   A row of 10 numbered boxes replaces the old progress line. The theme character sits inside
+   the current box and HOPS to the next box as the round advances. Completed boxes remember how
+   it went (green tick = correct, soft amber marker = wrong). The runner is absolutely
+   positioned; its `left` is set in px by JS (positionRunnerToBox, measured from the DOM) with
+   translateX(-50%) centring it on the box, and a left-transition makes the hop glide. */
+.qboard {
+  position: relative;
+  padding-top: 38px;        /* headroom above the boxes for the character + its hop */
+  margin-bottom: 4px;
+}
+/* The whole row is framed as one "wagon": a chunky outer border wraps all 10 boxes, which
+   sit inside as compartments divided by shared inner walls. Fully-rounded (pill) ends so the
+   first/last compartment reads as a soft rounded edge; internal boxes are squared so the
+   dividers read as walls, not gaps. */
+.qbox-row {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0;                                   /* compartments share walls (no gap) */
+  border: 3px solid var(--brand);
+  border-radius: 999px;                     /* soft, fully-rounded ends on the first/last box */
+  background: var(--surface-2);
+  overflow: hidden;                         /* clip the compartments to the rounded frame */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 10px rgba(76,60,180,0.16);
+}
+.qbox {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 0;                         /* square inside the wagon */
+  background: var(--surface-2);
+  border: 0;
+  border-right: 2px solid var(--border);    /* the dividing wall between compartments */
+  display: grid; place-items: center;
+  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+}
+.qbox:last-child { border-right: 0; }       /* no wall after the final compartment */
+.qbox-num { font-weight: 900; font-size: 0.8rem; color: var(--text-soft); line-height: 1; }
+.qbox-mark { position: absolute; top: 1px; right: 2px; font-size: 0.6rem; line-height: 1; }
+
+/* Current compartment: brand-tinted fill + an inset ring so it reads as "you are here"
+   without lifting out of the wagon frame (the frame uses overflow:hidden, so no translate). */
+.qbox.current {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+.qbox.current .qbox-num { color: var(--brand); }
+
+/* Done compartments: tinted fill + a small corner marker. Correct = green tick, wrong = amber
+   dot. We tint the compartment and recolour its dividing wall (no outer border to set). */
+.qbox.done-correct { background: var(--good-bg); border-right-color: var(--good); }
+.qbox.done-correct .qbox-num { color: var(--good); }
+.qbox.done-correct .qbox-mark::before { content: '\2713'; color: var(--good); font-weight: 900; } /* tick */
+.qbox.done-wrong { background: var(--bad-bg); border-right-color: var(--bad); }
+.qbox.done-wrong .qbox-num { color: var(--bad); }
+.qbox.done-wrong .qbox-mark::before { content: '\2022'; color: var(--accent); font-weight: 900; }   /* dot */
+
 .progress-text { text-align: center; color: var(--text-soft); font-weight: 700; margin: 8px 0; }
+
+.runner {
+  position: absolute;
+  left: 0; top: 0;                 /* sits above the boxes; `left` set in px by JS */
+  width: 34px; height: 34px;
+  transform: translateX(-50%);
+  transition: left 440ms cubic-bezier(.34,1.3,.5,1); /* glide/hop to the next box with overshoot */
+  filter: drop-shadow(0 3px 3px rgba(0,0,0,0.18));
+  z-index: 2;
+  /* v1.4: the character is interactive (hover/tap to greet). It sits in the headroom ABOVE
+     the boxes, clear of the answer buttons, so enabling pointer events here is safe. */
+  pointer-events: auto; cursor: pointer; touch-action: manipulation;
+  transform-origin: 50% 100%;
+}
+.runner svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+.runner:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; }
+
+/* v1.4: full-screen confetti overlay (positioning is also set inline by confetti.js
+   as a safety net). Non-interactive; sits above content but below modals. */
+.confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+/* On small screens the 10 compartments get tight - thin the frame/walls + shrink the number
+   so the wagon still fits one row. */
+@media (max-width: 560px) {
+  .qbox-row { border-width: 2.5px; border-radius: 999px; }
+  .qbox { border-right-width: 1.5px; }
+  .qbox-num { font-size: 0.66rem; }
+  .runner { width: 30px; height: 30px; }
+}
+@media (max-width: 380px) {
+  .qbox-num { font-size: 0.58rem; }
+}
+
+/* A lively idle: a gentle bob with a slight side-to-side sway so the character feels alive. */
+.runner[data-mood="idle"] { animation: runnerBob 2s ease-in-out infinite; }
+
+/* One-shot reactions, added via the .react class. data-mood picks which keyframes run. */
+.runner.react[data-mood="happy"] { animation: runnerHop 1000ms cubic-bezier(.28,.9,.35,1) 1; }
+.runner.react[data-mood="sad"]   { animation: runnerStumble 950ms ease-in-out 1; }
+
+/* Idle: a soft bob + tiny sway + micro-rotate (keeps translateX for centring). */
+@keyframes runnerBob {
+  0%, 100% { transform: translateX(-50%) translateY(0)    rotate(0deg); }
+  25%      { transform: translateX(-53%) translateY(-2px) rotate(-3deg); }
+  50%      { transform: translateX(-50%) translateY(-4px) rotate(0deg); }
+  75%      { transform: translateX(-47%) translateY(-2px) rotate(3deg); }
+}
+/* Happy: a big, joyful double-hop - squash to launch, a tall spinning first hop, a second
+   smaller bounce, then a squashy landing. */
+@keyframes runnerHop {
+  0%   { transform: translateX(-50%) translateY(0)     scale(1,1)        rotate(0deg); }
+  10%  { transform: translateX(-50%) translateY(4px)   scale(1.18,0.82)  rotate(0deg); }   /* deep squash */
+  32%  { transform: translateX(-50%) translateY(-34px) scale(0.86,1.16)  rotate(-18deg); } /* big launch + spin */
+  46%  { transform: translateX(-50%) translateY(-30px) scale(1,1)        rotate(14deg); }  /* hang + counter-spin */
+  58%  { transform: translateX(-50%) translateY(3px)   scale(1.14,0.86)  rotate(0deg); }   /* first landing squash */
+  72%  { transform: translateX(-50%) translateY(-16px) scale(0.94,1.08)  rotate(-6deg); }  /* second, smaller hop */
+  86%  { transform: translateX(-50%) translateY(2px)   scale(1.08,0.92)  rotate(0deg); }   /* land */
+  100% { transform: translateX(-50%) translateY(0)     scale(1,1)        rotate(0deg); }
+}
+/* Sad: a more characterful trip - lurch forward, arms-out wobble both ways, a little hop to
+   recover balance, then settle upright. Still dips toward the line but never leaves it. */
+@keyframes runnerStumble {
+  0%   { transform: translateX(-50%) translateY(0)    rotate(0deg)  scale(1,1); }
+  15%  { transform: translateX(-46%) translateY(4px)  rotate(-20deg) scale(1.06,0.94); } /* trip forward */
+  32%  { transform: translateX(-54%) translateY(6px)  rotate(14deg)  scale(1.08,0.92); } /* overbalance back */
+  50%  { transform: translateX(-49%) translateY(2px)  rotate(-10deg) scale(1,1); }
+  64%  { transform: translateX(-51%) translateY(-5px) rotate(4deg)   scale(0.96,1.04); } /* little recovery hop */
+  80%  { transform: translateX(-50%) translateY(2px)  rotate(-3deg)  scale(1.02,0.98); }
+  100% { transform: translateX(-50%) translateY(0)    rotate(0deg)   scale(1,1); }
+}
+
+/* v1.4: hover/tap "hello wave" - the character enlarges and rocks side to side like it's
+   waving hello. Only fires when idle (the hop/stumble reactions take priority). On desktop it
+   plays while hovered; on touch, JS adds .greet for one play on tap. */
+@media (hover: hover) {
+  .runner[data-mood="idle"]:not(.react):hover { animation: runnerGreet 900ms ease-in-out infinite; }
+}
+.runner[data-mood="idle"].greet:not(.react) { animation: runnerGreet 900ms ease-in-out 1; }
+@keyframes runnerGreet {
+  0%   { transform: translateX(-50%) translateY(0)    scale(1)    rotate(0deg); }
+  20%  { transform: translateX(-50%) translateY(-5px) scale(1.35) rotate(-10deg); } /* zoom up + lean */
+  40%  { transform: translateX(-50%) translateY(-5px) scale(1.35) rotate(9deg); }   /* wave over */
+  60%  { transform: translateX(-50%) translateY(-5px) scale(1.35) rotate(-7deg); }  /* wave back */
+  80%  { transform: translateX(-50%) translateY(-4px) scale(1.3)  rotate(5deg); }
+  100% { transform: translateX(-50%) translateY(0)    scale(1)    rotate(0deg); }
+}
+/* Reduced motion: no wave animation, but still give a subtle static enlarge on hover so the
+   character clearly reads as interactive. */
+@media (prefers-reduced-motion: reduce) and (hover: hover) {
+  .runner:hover { transform: translateX(-50%) scale(1.2); }
+}
 
 .timer-wrap { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-bottom: 10px; }
 .timer-wrap.hidden { display: none; }
@@ -273,8 +425,8 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .option:active:not(:disabled) { transform: translateY(1px) scale(0.96); box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
 .option:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .option:disabled { cursor: default; }
-.option.is-correct { border-color: var(--good); background: var(--good-bg); color: var(--good-ink); }
-.option.is-wrong { border-color: var(--bad); background: var(--bad-bg); color: var(--bad-ink); }
+.option.is-correct { border-color: var(--good); background: var(--good-bg); color: var(--good); }
+.option.is-wrong { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
 
 /* ---------- v1.2: Need a Hint? (untimed mode, after a pause) ---------- */
 .hint-zone { min-height: 0; margin-top: var(--space); text-align: center; }
@@ -373,26 +525,16 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .header-right .btn-ghost .hdr-txt { margin-left: 6px; }
 .home-btn.hidden { display: none; }
 
-/* Mobile: keep the logo + "MathFun" name visible; Theme/Home go icon-only and the chip
-   tightens so the whole header still fits on one line. */
+/* Mobile: single line, icon-only Theme/Home, tighter chip - avoids the header wrapping. */
 @media (max-width: 560px) {
   .app-header { padding: 10px 12px; gap: 8px; }
-  .brand { font-size: 1.1rem; flex: none; }
-  .brand-name { display: inline; } /* keep the wordmark visible on mobile */
-  .header-right { gap: 6px; min-width: 0; }
-  .header-right .btn-ghost { padding: 0; width: 40px; min-width: 40px; }
+  .brand-name { display: none; } /* keep the logo mark; drop the wordmark to save width */
+  .header-right { gap: 6px; }
+  .header-right .btn-ghost { padding: 0; width: 44px; min-width: 44px; }
   .header-right .btn-ghost .hdr-txt { display: none; } /* icon-only Theme + Home */
   .header-right .btn-ghost .hdr-ico { font-size: 1.2rem; margin: 0; }
-  .chip-name { max-width: 4ch; }
-  .chip-btn { padding: 4px 6px 4px 5px; }
-  .chip-av { font-size: 1.1rem; }
-
-  /* The operation picker + "Who's playing?" are short screens - on a tall phone they sit
-     high up. Nudge them down toward the vertical centre for a more balanced look. */
-  #screen-ops.is-active,
-  #screen-who.is-active {
-    padding-top: 8vh;
-  }
+  .chip-name { max-width: 5ch; }
+  .chip-btn { padding: 4px 8px 4px 5px; }
 }
 .profile-chip { position: relative; }
 .profile-chip.hidden { display: none; }
@@ -411,7 +553,10 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .chip-menu {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 20;
   background: var(--surface); border: 2px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; min-width: 190px;
+  border-radius: var(--radius); box-shadow: var(--shadow); min-width: 190px;
+  /* Clip to rounded corners, but if the menu is ever taller than the viewport (very short
+     screens) let it scroll INSIDE rather than clipping items off-screen. */
+  overflow: hidden auto; max-height: min(80vh, 460px);
 }
 .chip-menu > button {
   display: block; width: 100%; text-align: left; font: inherit; font-weight: 700;
@@ -420,7 +565,7 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .chip-menu > button:hover, .chip-menu > button:focus-visible { background: var(--surface-2); outline: none; }
 
 /* v1.2: Timer / Sound / Music toggles inside the player menu - compact single row,
-   each an icon with its On/Off switch stacked below. */
+   each an icon with its On/Off switch stacked below (v1.2 round 3). */
 .chip-menu-section {
   border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
   background: var(--surface-2);
@@ -444,7 +589,10 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 }
 .field input[type="text"]:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 .field input[type="range"] { accent-color: var(--brand); height: 32px; }
-.avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+/* Responsive: more columns on wider screens so every avatar shows without scrolling
+   (min ~54px tile, auto-fitting as many columns as fit). (v1.3 round 6) */
+.avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 8px; }
+@media (min-width: 600px) { .avatar-grid { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 10px; } }
 .avatar-opt {
   aspect-ratio: 1; font-size: 1.8rem; cursor: pointer;
   background: var(--surface); border: 3px solid var(--border); border-radius: var(--radius-sm);
@@ -490,6 +638,26 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .profile-details dt { color: var(--text-soft); font-weight: 700; }
 .profile-details dd { margin: 0; font-weight: 900; }
 .play-top h2 { flex: 1; }
+
+/* Age picker tiles */
+.age-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.age-opt {
+  aspect-ratio: 1; font: inherit; font-weight: 900; font-size: 1.2rem; cursor: pointer;
+  background: var(--surface); color: var(--text);
+  border: 3px solid var(--border); border-radius: var(--radius-sm);
+  display: grid; place-items: center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 0 var(--border), 0 5px 10px rgba(76,60,180,0.12);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+@media (hover: hover) {
+  .age-opt:hover { transform: translateY(-2px); border-color: var(--brand); }
+}
+.age-opt:active { transform: translateY(1px) scale(0.95); box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+.age-opt:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.age-opt.selected {
+  border-color: var(--brand); background: var(--surface-2); transform: none;
+  box-shadow: inset 0 0 0 2px rgba(109,94,252,0.25);
+}
 
 /* Age stepper (v1.2): a single colourful editable box with - / + on each side */
 .age-stepper {
@@ -547,7 +715,8 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .profile-pick-name { font-weight: 900; }
 .profile-pick-age { font-size: 0.8rem; color: var(--text-soft); }
 
-/* ---------- Operations picker (fun, aligned tiles) ---------- */
+/* ---------- v1.1: Operations picker (fun, aligned tiles) ---------- */
+.ops-hint { text-align: center; margin: 0 0 var(--space); }
 /* Fixed 2 columns x 3 rows on every screen. Columns are capped in width and the grid is
    centred + width-limited so tiles stay squarish and don't stretch wide on a laptop. */
 .op-grid {
@@ -560,7 +729,7 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
   position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   background: var(--surface); border: 3px solid var(--border);
-  border-radius: var(--radius); padding: 10px 12px; min-height: 81px;
+  border-radius: var(--radius); padding: 10px 12px; min-height: 81px; /* ~25% shorter (was 108px square) */
   cursor: pointer; color: var(--text); font: inherit;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 0 var(--border), 0 8px 16px rgba(76,60,180,0.14);
   transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
@@ -603,18 +772,6 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
   .op-daily:hover { border-color: #06b6d4; }
 }
 
-.op-card.coming-soon { cursor: not-allowed; opacity: 0.72; }
-.op-card.coming-soon .op-symbol { filter: grayscale(0.55); }
-.op-soon {
-  position: absolute; top: 10px; right: 10px;
-  background: var(--accent); color: #4a2c00; font-weight: 900; font-size: 0.62rem;
-  padding: 3px 8px; border-radius: 999px; letter-spacing: 0.02em;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-}
-
-/* Difficulty grid variants: keep a tidy 2-up on phones for both 3+table and 4-level sets. */
-.mode-grid-4 { grid-template-columns: 1fr 1fr; }
-
 /* ---------- v1.2: Fun Facts screen ---------- */
 .funfact-card {
   background: linear-gradient(135deg, var(--surface), var(--surface-2));
@@ -631,6 +788,18 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
   60% { transform: scale(1.03); }
   100% { transform: scale(1); opacity: 1; }
 }
+
+.op-card.coming-soon { cursor: not-allowed; opacity: 0.72; }
+.op-card.coming-soon .op-symbol { filter: grayscale(0.55); }
+.op-soon {
+  position: absolute; top: 10px; right: 10px;
+  background: var(--accent); color: #4a2c00; font-weight: 900; font-size: 0.62rem;
+  padding: 3px 8px; border-radius: 999px; letter-spacing: 0.02em;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+/* Difficulty grid variants: keep a tidy 2-up on phones for both 3+table and 4-level sets. */
+.mode-grid-4 { grid-template-columns: 1fr 1fr; }
 
 /* ---------- v1.2: All-operations progress overview ---------- */
 .op-progress-grid { display: flex; flex-direction: column; gap: 12px; }
@@ -649,7 +818,7 @@ h2 { font-size: 1.5rem; margin: 4px 0 var(--space); text-align: center; }
 .opc-stats { display: flex; gap: 16px; flex-wrap: wrap; color: var(--text-soft); font-weight: 700; font-size: 0.9rem; }
 .opc-stats b { color: var(--brand); font-size: 1.05rem; }
 
-/* ---------- Operation progress summary (add/sub/mul/div) ---------- */
+/* ---------- v1.1: Operation progress summary (add/sub/div) ---------- */
 .op-summary { display: flex; flex-direction: column; gap: var(--space); }
 .summary-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .summary-stats .stat {
@@ -815,8 +984,60 @@ body::before {
   --skin-pattern-opacity: 0.11;
 }
 
+/* ==== v1.4 NEW skins (original, trademark-safe vibe-alikes) ==== */
+
+/* ---- Honey Woods: warm honey-gold + soft red, cosy woodland ---- */
+:root[data-skin="honey"] {
+  --brand: #e0982f; --brand-2: #d9643a; --accent: #f4c430;
+  --bg: #fdf5e3; --surface: #ffffff; --surface-2: #fbeccb; --border: #f0dca8;
+  --skin-bg: linear-gradient(180deg, #ffe9b8 0%, #fdf1d6 55%, #fdf5e3 100%);
+  --skin-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Ctext x='28' y='62' font-size='46'%3E%F0%9F%90%BB%3C/text%3E%3Ctext x='158' y='112' font-size='42'%3E%F0%9F%90%9D%3C/text%3E%3Ctext x='62' y='185' font-size='46'%3E%F0%9F%8D%AF%3C/text%3E%3Ctext x='185' y='215' font-size='44'%3E%F0%9F%8E%88%3C/text%3E%3Ctext x='118' y='150' font-size='42'%3E%F0%9F%8D%82%3C/text%3E%3C/svg%3E");
+  --skin-pattern-opacity: 0.13;
+}
+
+/* ---- Kart Racers: racing red + track blue + checkered-flag energy ---- */
+:root[data-skin="kart"] {
+  --brand: #e11d48; --brand-2: #2563eb; --accent: #f5c518;
+  --bg: #fdeef0; --surface: #ffffff; --surface-2: #fbe0e5; --border: #f6c4cd;
+  --skin-bg: linear-gradient(135deg, #ffd9df 0%, #ffe9ec 50%, #fdeef0 100%);
+  --skin-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Ctext x='28' y='60' font-size='44'%3E%F0%9F%8F%8E%EF%B8%8F%3C/text%3E%3Ctext x='158' y='110' font-size='44'%3E%F0%9F%8F%81%3C/text%3E%3Ctext x='62' y='182' font-size='44'%3E%F0%9F%8F%86%3C/text%3E%3Ctext x='185' y='214' font-size='42'%3E%E2%AD%90%3C/text%3E%3Ctext x='116' y='150' font-size='40'%3E%F0%9F%9B%9E%3C/text%3E%3C/svg%3E");
+  --skin-pattern-opacity: 0.11;
+}
+
+/* ---- Piggy Puddles: bubblegum pink + puddle blue, rainy-day fun ---- */
+:root[data-skin="piggy"] {
+  --brand: #ec4b8a; --brand-2: #3b82f6; --accent: #fbbf24;
+  --bg: #fff0f6; --surface: #ffffff; --surface-2: #ffe1ee; --border: #fcc7dd;
+  --skin-bg: linear-gradient(180deg, #ffd6e8 0%, #ffe6f0 55%, #fff0f6 100%);
+  --skin-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Ctext x='28' y='62' font-size='46'%3E%F0%9F%90%B7%3C/text%3E%3Ctext x='158' y='112' font-size='42'%3E%E2%98%82%EF%B8%8F%3C/text%3E%3Ctext x='62' y='185' font-size='44'%3E%F0%9F%8C%88%3C/text%3E%3Ctext x='185' y='215' font-size='44'%3E%F0%9F%8C%BC%3C/text%3E%3Ctext x='118' y='150' font-size='42'%3E%F0%9F%92%A7%3C/text%3E%3C/svg%3E");
+  --skin-pattern-opacity: 0.12;
+}
+
+/* ---- Robo Cat: bright sky-blue + white + red collar, futuristic + friendly ---- */
+:root[data-skin="robocat"] {
+  --brand: #2aa5e0; --brand-2: #e5322f; --accent: #f5c518;
+  --bg: #e8f6fe; --surface: #ffffff; --surface-2: #dcf0fd; --border: #bfe3f7;
+  --skin-bg: linear-gradient(135deg, #bfe6fb 0%, #ddf2fe 50%, #e8f6fe 100%);
+  --skin-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Ctext x='30' y='60' font-size='44'%3E%F0%9F%90%B1%3C/text%3E%3Ctext x='155' y='110' font-size='42'%3E%F0%9F%94%94%3C/text%3E%3Ctext x='65' y='182' font-size='44'%3E%F0%9F%9A%80%3C/text%3E%3Ctext x='182' y='212' font-size='42'%3E%F0%9F%94%AE%3C/text%3E%3Ctext x='114' y='150' font-size='40'%3E%E2%AD%90%3C/text%3E%3C/svg%3E");
+  --skin-pattern-opacity: 0.11;
+}
+
+/* ---- Little Explorer: sunny yellow + sky blue, bright + cheerful ---- */
+:root[data-skin="explorer"] {
+  --brand: #f5a623; --brand-2: #2a7de1; --accent: #ec4899;
+  --bg: #fff8e9; --surface: #ffffff; --surface-2: #fdefcf; --border: #f6e0a8;
+  --skin-bg:
+    radial-gradient(circle at 18% 16%, rgba(42,125,225,0.10), transparent 38%),
+    radial-gradient(circle at 82% 80%, rgba(236,72,153,0.10), transparent 40%),
+    linear-gradient(180deg, #fff1cc 0%, #fff8e9 100%);
+  --skin-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Ctext x='30' y='60' font-size='44'%3E%F0%9F%A7%92%3C/text%3E%3Ctext x='155' y='110' font-size='42'%3E%F0%9F%90%A5%3C/text%3E%3Ctext x='65' y='182' font-size='44'%3E%F0%9F%90%B6%3C/text%3E%3Ctext x='182' y='212' font-size='42'%3E%F0%9F%8E%88%3C/text%3E%3Ctext x='114' y='150' font-size='40'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E");
+  --skin-pattern-opacity: 0.12;
+}
+
 /* ---- Dark form of each skin: keep the skin's accents (--brand/--brand-2/--accent
-   set above), but re-darken the surfaces so dark mode reads consistently across skins. ---- */
+   set above), but re-darken the surfaces so dark mode reads consistently across skins.
+   These fire only when the user also has dark selected (manual or, for no explicit
+   choice, OS-dark). ---- */
 :root[data-theme="dark"] {
   --bg: #14162b; --surface: #1e2140; --surface-2: #262a4d;
   --text: #f0f1fb; --text-soft: #a6abcf; --border: #333863;
@@ -833,14 +1054,14 @@ body::before {
 }
 
 /* ---- Skin picker (wizard step + menu) - reuses the tile look ---- */
-/* Responsive columns so all 10 themes fit WITHOUT a scrollbar: 2-up on phones, 3-up on
-   tablets, 4-up on laptops (paired with the .modal-wide widths). No height cap. (v1.3) */
+/* Responsive columns so all themes fit WITHOUT a scrollbar: 2-up on phones, 3-up on
+   tablets, 4-up on laptops (paired with the .modal-wide widths). No height cap. (v1.3 r6) */
 .theme-grid {
   display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 2px;
 }
 @media (min-width: 560px) { .theme-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 820px) { .theme-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; } }
-/* Tile: compact padding/gap (v1.3) so all 10 fit comfortably on one screen. */
+/* Tile: compact padding/gap (v1.3 r6) so all fit comfortably on one screen. */
 .theme-opt {
   display: flex; align-items: center; gap: 8px; text-align: left;
   background: var(--surface); border: 3px solid var(--border); border-radius: var(--radius);
@@ -882,13 +1103,18 @@ body::before {
 }
 
 /* ==================================================================================
-   v1.3: fill the empty space - centre short screens vertically and scale content up on
-   larger viewports so the layout doesn't look sparse (mobile, tablet or laptop).
+   v1.3 round 4: fill the empty space - centre short screens vertically and scale content
+   up on larger viewports so the layout doesn't look sparse (mobile, tablet or laptop).
    ================================================================================== */
+
+/* Let the main area grow to fill the viewport between header and footer, so its screens
+   have room to centre into rather than hugging the top. */
 .app-main { display: flex; flex-direction: column; }
 .screen.is-active { flex: 1; }
 
-/* The "short" screens centre their content; content-heavy screens stay top-aligned. */
+/* The "short" screens (few controls) centre their content vertically + horizontally so
+   they use the whole space instead of clinging to the top. Content-heavy/scrolling screens
+   (play, progress grid, rewards, help, setup wizard) stay top-aligned so nothing is cut off. */
 #screen-ops.is-active,
 #screen-who.is-active,
 #screen-funfacts.is-active,
@@ -901,7 +1127,8 @@ body::before {
 #screen-funfacts.is-active > *,
 #screen-results.is-active > * { width: 100%; }
 
-/* Bigger, more generous tiles/headings once there's room (tablet + laptop). */
+/* Bigger, more generous tiles/headings once there's room (tablet + laptop). Fills the
+   width nicely without stretching tiles absurdly wide. */
 @media (min-width: 600px) {
   .op-grid { grid-template-columns: repeat(2, minmax(0, 200px)); max-width: 440px; gap: 20px; }
   .op-card { min-height: 120px; }
@@ -910,11 +1137,15 @@ body::before {
   .profile-picks { max-width: 460px; margin: 0 auto; }
   h2 { font-size: 1.8rem; }
 }
-/* Wide laptop/desktop: three across so the six option tiles read as 3x2 and fill the width. */
+
+/* Wide laptop/desktop: allow three across so the row of six option tiles reads as 3x2 and
+   fills the width instead of leaving big side gutters. */
 @media (min-width: 900px) {
   .op-grid { grid-template-columns: repeat(3, minmax(0, 200px)); max-width: 680px; }
 }
-/* On phones, give short screens room and let tiles grow a bit. */
+
+/* On phones, give the short screens a little breathing room and let the tiles grow a bit
+   so the 2x3 grid fills more of the tall screen. */
 @media (max-width: 560px) {
   .op-grid { max-width: 92vw; gap: 14px; }
   .op-card { min-height: 96px; }
@@ -922,20 +1153,36 @@ body::before {
 }
 
 /* ==================================================================================
-   v1.3: pickers fit without scrolling - responsive table/theme/avatar grids + wide modal.
+   v1.4: "update available" toast - a small bottom banner shown when a new service-worker
+   version is waiting. Tap Update to activate it (page reloads into the new version); Later
+   hides it for this session. Theme-tinted; reduced-motion-safe (the global block disables
+   the slide transition, and the JS removes it via a timeout).
    ================================================================================== */
-/* Theme picker + table picker dialogs get more room on bigger screens. */
-.modal.modal-wide { max-width: 560px; }
-@media (min-width: 700px) { .modal.modal-wide { max-width: 760px; } }
-@media (min-width: 1000px) { .modal.modal-wide { max-width: 900px; } }
-
-/* 1-20 number tiles: 5-up phone, 7-up tablet, 10-up laptop, so the set never scrolls. */
-@media (min-width: 560px) { .table-grid { grid-template-columns: repeat(7, 1fr); } }
-@media (min-width: 820px) { .table-grid { grid-template-columns: repeat(10, 1fr); } }
-
-/* Avatar grid: responsive columns so every avatar shows without scrolling. */
-.avatar-grid { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); }
-@media (min-width: 600px) { .avatar-grid { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 10px; } }
-
-/* Player chip menu: never clip items off-screen; scroll inside only as a last resort. */
-.chip-menu { overflow: hidden auto; max-height: min(80vh, 460px); }
+.update-toast {
+  position: fixed;
+  left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  transform: translateX(-50%) translateY(140%);   /* start off-screen below */
+  z-index: 70;                                     /* above confetti (60) + content */
+  width: min(440px, calc(100vw - 24px));
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: var(--surface); color: var(--text);
+  border: 2px solid var(--brand); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  transition: transform 320ms cubic-bezier(.2,.8,.3,1);
+}
+.update-toast.show { transform: translateX(-50%) translateY(0); }
+.update-toast-text { font-weight: 800; font-size: 0.95rem; text-align: center; }
+.update-toast-actions { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.update-toast .update-toast-update { width: auto; margin: 0; min-height: 44px; font-size: 1rem; padding: 0 18px; }
+.update-toast-dismiss {
+  font: inherit; font-weight: 800; cursor: pointer;
+  background: none; border: none; color: var(--text-soft);
+  min-height: 44px; padding: 0 10px; border-radius: var(--radius-sm);
+}
+.update-toast-dismiss:hover { color: var(--text); }
+.update-toast-dismiss:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .update-toast { gap: 8px; padding: 10px 12px; }
+  .update-toast-text { font-size: 0.88rem; }
+}

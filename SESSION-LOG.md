@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** Built - code at v1.3.3 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes + app-store metadata + a11y polish). v1.3.x is ported and awaiting Isaac's deploy/verify on the hosted site - https://isaacgera.github.io/MathFun/
+- **Status:** v1.4.0 code-complete & ported to the live root (animated play-screen character on a 10-box "wagon" board, hop/stumble/greet + confetti, 15 character themes, user-prompted update toast) - committed, awaiting Isaac's deploy + live verify before Ideas.md flips to Built. Prior shipped v1.3.3 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes + app-store metadata + a11y polish). Live - https://isaacgera.github.io/MathFun/
 - **Live:** https://isaacgera.github.io/MathFun/
 - **Description:** Playful maths game for kids 5-15. Multiplication 1x-20x shipped; v1.1 adds an operation picker (＋ － ✕ ÷) with full Addition & Subtraction (Division coming next). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
@@ -1318,3 +1318,362 @@ packaging, testing and store-registration work on the already-shipped v1.3.3 bui
   NOT the MathFun repo) so the browser address bar disappears.
 - **iOS App Store** is a LATER, separate project (needs a Mac + Xcode + $99/yr Apple Developer
   account; Apple's minimum-functionality review is the main risk).
+
+## v1.4 prototype - progress-line character + 5 new themes - 30 Oct 2026
+Started the "make it more fun" batch **prototype-first** in `prototypes/` (version
+`1.4.0-proto`, storage `mathfunproto_`, banner). **The shipped app at the root is untouched at
+v1.3.3** and only changes after Isaac tests, signs off, and we port in one pass.
+
+**Mode:** Quick Spec / Spec-ish (multi-behaviour on a shipped app: a new animated play-screen
+element + theme-registry additions + CSS/sound work). Build-standards flags unchanged:
+Simple-tier rigour, vanilla no-build stack, mobile-first PWA.
+
+**Trademark decision (agreed with Isaac - option A):** Isaac originally suggested named
+characters (Winnie the Pooh, Mario, Peppa Pig, Doraemon, Pocoyo). Those are all
+registered/enforced trademarks, and MathFun is mid-way through **Google Play** submission with a
+deliberately clean IP position (the whole theme set is original by design). So we agreed to add
+**original, trademark-safe vibe-alikes** instead - same approach as the existing 10 themes
+(palette + emoji + synth tune + on-theme avatars + a drawn sprite; no copyrighted names,
+characters, logos or assets). Keeps the store door open.
+
+**The two changes (all in `prototypes/`):**
+
+1. **Animated theme character on the progress line ("the runner").** While a round plays, the
+   active theme's little drawn **SVG character rides along the progress line** at the top,
+   advancing with each question (Q1->Q10). On a **correct** answer it does a joyful **double-hop**
+   (up, little spin, squash-and-stretch land); on a **wrong** answer it does a quick
+   **stumble-and-wobble that recovers and stays on the line** (option (a), not a drop-off - gentler
+   for a kids' app). A subtle idle bob keeps it alive between answers. Agreed design points: SVG
+   sprites (not emoji), sits on the line, jumps on correct, stumble-and-recover on wrong,
+   reduced-motion honoured.
+
+2. **5 new trademark-safe themes** (so the roster is now **15**): **Honey Woods** (cosy bear +
+   honey, Pooh-vibe), **Kart Racers** (speedy go-karts, Mario-Kart-vibe), **Piggy Puddles** (pink
+   pig + muddy puddles, Peppa-vibe), **Robo Cat** (blue gadget-cat-from-the-future, Doraemon-vibe),
+   **Little Explorer** (bright curious toddler + pets, Pocoyo-vibe). Each gets its own palette
+   (light+dark), emoji-pattern background, op/tab/hint emoji, on-theme avatar set, **a distinct
+   synth tune**, and **its own drawn sprite**.
+
+**What was built/changed:**
+- **New `js/sprites.js`** - a registry of **15 inline-SVG** characters (one per theme; Math World
+  is the default/fallback). Simple bold cartoon shapes drawn into a 48x48 viewBox, fully offline,
+  no image files, trademark-safe. Exports `spriteFor(themeKey)` with a safe fallback to Math World.
+- **`js/themes.js`** - added the 5 new theme entries (name/emoji/tagline/tune/ops/tabs/hintIcon/
+  avatars) and appended them to `THEME_ORDER`. (No schema change - `settings.skin` already exists;
+  the new keys just become selectable, and `fillDefaults`/migration are untouched.)
+- **`js/sound.js`** - added **5 new distinct tunes** (honey = gentle slow sine lullaby; kart =
+  fast driving square chase; piggy = playful triangle skip; robocat = quirky bouncy square;
+  explorer = sunny simple sine toddle) so each new theme sounds different, matching the existing
+  one-tune-per-theme feature. (Unknown tune keys would otherwise have silently reused Math World's.)
+- **`js/ui.js`** - imported `spriteFor`; `renderPlayShell(container, mode, skin)` now renders a
+  `.progress-track` wrapping the bar plus a `.runner` holding the theme sprite; `positionRunner()`
+  sets the runner's `left` % from the progress fraction; `runnerReact(mood)` adds `.react` +
+  `data-mood` (happy/sad) and clears to idle on `animationend` (with a 1300ms fallback);
+  `renderQuestion` calls `positionRunner(round.index/ROUND_SIZE)`; `showFeedback` calls
+  `runnerReact('happy'|'sad')`.
+- **`js/app.js`** - both `renderPlayShell` calls (normal round + Daily Challenge) now pass
+  `state.getSkin()` so the runner matches the active theme. `APP_VERSION` -> `1.4.0-proto`.
+- **`styles.css`** - new `.progress-track` (headroom + side padding so the sprite never clips),
+  `.runner` (absolute, `translateX(-50%)`, smooth `left` glide with a little overshoot), and
+  `runnerBob`/`runnerHop`/`runnerStumble` keyframes. **Reduced motion:** the existing
+  `@media (prefers-reduced-motion: reduce)` block already kills all animation + transition, so the
+  bob/hop/stumble and the glide are skipped and the runner simply repositions - no extra rule
+  needed. Also added the **5 new per-skin palette + emoji-pattern blocks** (light forms; the shared
+  `[data-theme="dark"]` block re-darkens surfaces so each has a dark form too).
+- **`sw.js`** - `VERSION` -> `1.4.0-proto` (cache `mathfun-proto-1.4.0-proto`), added
+  `./js/sprites.js` to the precache list.
+- **`index.html`** - Help copy updated: names the new themes and explains the running character
+  (jumps on correct, stumbles on miss).
+
+**Verification note:** as always this Windows/Kiro shell can't run Node or a browser (and
+`grep_search` doesn't reach this OneDrive path - confirmed again), so code was cross-checked by
+reading every consumer of the changed/added APIs. **All 8 changed/created files pass diagnostics
+with zero errors** (sprites.js, themes.js, sound.js, ui.js, app.js, styles.css, sw.js, index.html).
+Confirmed `state.getSkin()` exists (safe 'math' default) and `spriteFor()` falls back to Math World
+for any unknown key, so the runner can never render blank. **Needs Isaac's manual Live Server
+pass** of `prototypes/` before we port.
+
+**Isaac's Live Server checklist (test the prototype, http not file://):**
+1. Serve `Learning/MathFun/prototypes/`; open the URL. (Sandbox `mathfunproto_` data, separate from live.)
+2. **Runner appears + moves:** start any round - the theme's little character sits on the progress
+   line and **advances left->right** as you go Q1->Q10. A gentle idle bob between answers.
+3. **Correct = jump for joy:** answer correctly - the character does a happy double-hop/spin and
+   lands back on the line.
+4. **Wrong = stumble + recover:** answer incorrectly - it does a quick wobble/trip and rights itself,
+   **staying on the line** (no drop-off).
+5. **Runner matches the theme:** switch themes (create wizard Theme step, or the player-menu Theme)
+   and start a round - the sprite is that theme's character (bear for Honey Woods, kart for Kart
+   Racers, pig for Piggy Puddles, blue cat for Robo Cat, kid for Little Explorer, etc.).
+6. **5 new themes end-to-end:** each new theme shows its palette, emoji-pattern background, op/tab
+   tile emoji, on-theme avatar set, and a **distinct tune** (turn Music on). Check light AND dark.
+7. **Daily Challenge** also shows the runner (it uses the same play screen).
+8. **Reduced motion:** with OS "reduce motion" on, the hop/stumble/bob are off and the runner just
+   repositions (no bounce) - nothing should feel broken.
+9. **Regression:** existing 10 themes still fine; Add/Sub/Mul/Div, Fun Facts, hints, progress,
+   rewards, timer/sound/music, keyboard 1-4, the mobile single-line header + player menu all still work.
+
+**Pending (next steps):** Isaac verifies on Live Server -> then **port to the live app** (version
+-> 1.4.0, cache `mathfun-v1.4.0`, storage stays `mathfun_`, precache `sprites.js`, README changelog
++ userguide + SPEC docs, Ideas.md -> Built (MathFun v1.4.0), deploy + verify). `Ideas.md` row moved
+to **In Progress (MathFun v1.4, from v1.3.3)** now that a build has begun.
+
+### v1.4 prototype - round 2: richer characters + more animation + confetti - 30 Oct 2026
+Isaac asked for the progress-line character to (a) look more like real-world characters,
+(b) have more animation, and (c) throw confetti as they progress. Still **prototype-only**
+(`prototypes/`, `1.4.0-proto`); the shipped app stays at v1.3.3.
+
+**Trademark call (reaffirmed, Isaac agreed):** "look like the real-world characters" can't mean
+*recognisably resembling* Winnie the Pooh / Mario / Peppa Pig / Doraemon / Pocoyo - a close
+visual imitation of a protected character is infringement just like using the name, and MathFun
+is mid-Google-Play submission with a deliberately clean IP position. So the sprites were made
+**much richer and more characterful but original - clearly evocative of that TYPE of character,
+drawn as our own** (store-safe). Isaac said "go with your instinct".
+
+**What changed (all in `prototypes/`):**
+
+1. **All 15 sprites redrawn** (`sprites.js`) - far more detail and personality while staying
+   simple enough to read at ~38px: soft ground shadows, rounded bodies with highlight/shade,
+   bold eyes with catch-lights, rosy cheeks, clear smiles, and theme props. The 5 new ones are
+   now properly characterful originals: **Honey Woods** = plump storybook bear hugging a honey
+   pot; **Kart Racers** = helmeted driver in a little red kart (racing stripe + number "1");
+   **Piggy Puddles** = piglet in red wellies with a splash; **Robo Cat** = round sky-blue robot
+   cat (white face, cat-eyes, red nose, collar + bell); **Little Explorer** = bright round-headed
+   toddler in a yellow jumper. The original 10 were upgraded to match (plumber with cap/
+   moustache/overalls, astronaut in a helmet, octopus with suckers, wizard with star hat + wand,
+   etc.). Still inline SVG, fully offline, trademark-safe.
+
+2. **New `js/confetti.js`** - a tiny dependency-free burst on a single full-screen `<canvas>`
+   overlay animated with `requestAnimationFrame`, auto-removed when the pieces settle. Theme-
+   tinted (reads `--brand/--brand-2/--accent` off the active skin, mixed with festive constants).
+   **Reduced-motion-safe:** `burst()` is a no-op when `prefers-reduced-motion` is set. Exports
+   `burst({x,y,count,spread,power})` and `burstFromElement(el, opts)`.
+
+3. **Confetti wired** (`ui.js`):
+   - **Small burst per correct answer** - `runnerReact('happy')` fires `burstFromElement(runner,
+     {count:22})` ~260ms in, so it pops at the top of the character's hop.
+   - **Bigger burst at round complete** - `renderResults` fires a centre-screen burst scaled by
+     stars (40 + stars*20 pieces); a **3-star perfect round gets a double side-pop**. Covers
+     normal rounds and the Daily Challenge (same results screen).
+
+4. **Richer runner animations** (`styles.css`): livelier **idle** (bob + slight sway +
+   micro-rotate), a bigger, bouncier **happy double-hop** (deep squash -> tall spinning launch
+   -> second smaller bounce -> squashy land), and a more characterful **stumble** (lurch, wobble
+   both ways, little recovery hop, settle upright - still never leaves the line). Hop reaches
+   -34px, which fits inside the track's 40px headroom. Reduced motion still disabled via the
+   existing global block; added a `.confetti-canvas` style (positioning also inlined by the JS).
+
+5. **`sw.js`** - added `./js/confetti.js` to the precache (cache stays `mathfun-proto-1.4.0-proto`).
+
+**Verification:** all changed/created files pass diagnostics with zero errors (sprites.js,
+confetti.js, ui.js, styles.css, sw.js). Cross-read the flow: confetti fires only on correct
+(small) and at results (big), both no-op under reduced motion; z-index 60 keeps it above content
+but it's non-interactive. As always the Windows/Kiro shell can't run a browser here, so the SVG
+art + animation + confetti need **Isaac's Live Server eyes**.
+
+**Isaac's Live Server recheck (prototype, http not file://):**
+1. **Characters:** the 15 sprites should now read as proper little characters with personality
+   (check a few themes incl. the 5 new ones: bear, kart driver, piglet, robo-cat, toddler).
+2. **Correct answer:** the character does a big bouncy double-hop AND a small confetti burst pops
+   from it.
+3. **Wrong answer:** a more characterful stumble-and-recover (no confetti), stays on the line.
+4. **Round complete:** a bigger confetti burst on the results screen; a 3-star round gets an
+   extra double-pop.
+5. **Theme-tinted confetti:** switch themes and confirm the confetti colours pick up the skin.
+6. **Reduced motion:** with OS reduce-motion on, no hop/stumble/confetti - the runner just
+   repositions, nothing feels broken.
+7. **Perf/regression:** 10 quick answers in a row shouldn't stutter; existing play/results,
+   Daily Challenge, keyboard 1-4, mobile header all still fine.
+
+**Pending:** Isaac verifies -> then port v1.4 to the live app (version 1.4.0, cache
+`mathfun-v1.4.0`, precache `sprites.js` + `confetti.js`, docs, Ideas.md -> Built). `Ideas.md`
+row stays **In Progress (MathFun v1.4, from v1.3.3)**.
+
+### v1.4 prototype - round 3: progress line -> hopscotch board of 10 numbered boxes - 30 Oct 2026
+Isaac asked to replace the progress line with a **board of boxes**: 10 boxes numbered 1-10, and
+the character **jumps from box to box** as the round progresses. Agreed design (Isaac picked):
+(1a) **one row of 10, sized down on mobile** (see the whole journey at once), and (2) the boxes
+**remember** how each question went (tick = correct, soft marker = wrong). Still prototype-only
+(`prototypes/`, `1.4.0-proto`); shipped app stays v1.3.3.
+
+**What changed (all in `prototypes/`):**
+- **`ui.js` `renderPlayShell`** - the old `.progress-track`/`.progress`/`.progress-bar` line is
+  replaced by a `.qboard` containing a `.qbox-row` of 10 `.qbox` tiles (each a number 1-10 + a
+  `.qbox-mark` corner), plus the `.runner` character positioned over the active box.
+- **New helpers:** `positionRunnerToBox(container, i)` measures the box's offset from the DOM and
+  sets the runner's `left` in px (centred via translateX(-50%)) so it **hops to that box** (CSS
+  left-transition animates the glide); hardened to retry on the next frame if the board isn't laid
+  out yet (zero-width guard, max 5 tries). `setActiveBox(i)` highlights the current box.
+  `markBox(i, correct)` records `done-correct`/`done-wrong` on an answered box.
+- **`renderQuestion`** now calls `setActiveBox(round.index)` + `positionRunnerToBox(round.index)`
+  (the per-question hop) instead of the old percentage-based `positionRunner`. Keeps the
+  "Question N of 10" text (board is `aria-hidden`, so the text stays for screen-reader clarity).
+- **`showFeedback`** gains a `questionIndex` param (the box just answered, = `round.index` before
+  it advances) and calls `markBox(questionIndex, result.correct)` so the box remembers the result.
+  The hop/stumble + confetti wiring from round 2 is unchanged.
+- **`app.js`** - the `showFeedback` call now passes `round.index` as the new `questionIndex` arg.
+- **`styles.css`** - new `.qboard`/`.qbox-row` (10-col grid)/`.qbox` (square tiles) with states:
+  `.current` (brand highlight + lift), `.done-correct` (green tint + `\2713` tick),
+  `.done-wrong` (red tint + amber `\2022` dot). Runner re-anchored to sit on the board (px `left`,
+  440ms hop transition). Mobile rules shrink the number + gap so all 10 fit one row (and smaller
+  again <=380px). The runner's idle/hop/stumble keyframes + confetti are unchanged; reduced-motion
+  still disables them via the existing global block.
+- **`index.html`** - Help copy updated: the character "hops along a board of 10 numbered boxes...
+  each box remembers how you did".
+
+**Flow (traced):** Q1 -> runner sits on box 0, box 0 highlighted. Answer -> box 0 marked
+tick/dot, hop+confetti fire. After the pause -> advance to Q2 -> runner hops to box 1, box 1
+highlighted. ...Q10 -> after marking box 9, endRound() shows results (board ends fully filled) +
+the bigger results confetti.
+
+**Verification:** ui.js, app.js, styles.css all pass diagnostics with zero errors. Flow cross-read
+end to end (box memory set before index advances; hop driven by the next renderQuestion; last box
+handled by endRound). As always the Windows/Kiro shell can't run a browser, so the board layout,
+hop timing and mobile fit need **Isaac's Live Server eyes**.
+
+**Isaac's Live Server recheck (prototype, http not file://):**
+1. **Board shows:** a row of 10 numbered boxes (1-10) replaces the old line; the character sits on
+   box 1 at the start.
+2. **Hops per question:** answering moves the character to the next box (a visible glide/hop), one
+   box per question, all the way to box 10.
+3. **Box memory:** each answered box shows a green tick (correct) or an amber dot (wrong); the
+   current box is highlighted.
+4. **Correct still = big hop + confetti; wrong = stumble** (on the box).
+5. **Mobile one-row fit:** on a phone width all 10 boxes stay on one row (sized down), nothing
+   wraps or scrolls; check <=380px too.
+6. **Round complete:** board ends filled with ticks/dots; results confetti still fires.
+7. **Reduced motion:** no hop/stumble/confetti; the character still moves to the right box.
+8. **Regression:** timer mode, hints, keyboard 1-4, Daily Challenge (same board), themes all fine.
+
+**Pending:** Isaac verifies -> then port v1.4 to the live app (version 1.4.0, cache
+`mathfun-v1.4.0`, precache `sprites.js` + `confetti.js`, docs, Ideas.md -> Built). `Ideas.md` row
+stays **In Progress (MathFun v1.4, from v1.3.3)**.
+
+### v1.4 prototype - round 3b: "wagon" frame around the boxes - 30 Oct 2026
+Isaac asked for an outer border around the boxes so the board looks like a **wagon separated
+into compartments**. CSS-only (`styles.css`), still `1.4.0-proto`:
+- `.qbox-row` is now one framed "wagon": a chunky 3px brand-coloured outer border, rounded
+  (14px) corners, `overflow:hidden`, and `gap:0` so the compartments share walls.
+- Each `.qbox` is squared with only a `border-right` acting as the **dividing wall** between
+  compartments; `:last-child` drops its wall. First/last compartments round against the frame
+  via the row's `overflow:hidden`.
+- State styles reworked to suit the frame (no per-box lift/outer border, which an `overflow:
+  hidden` frame would clip): **current** = white fill + inset brand ring; **done-correct** =
+  green tint + green wall + `\2713`; **done-wrong** = red tint + red wall + amber `\2022`.
+- Mobile: thinner frame/walls (2.5px frame, 1.5px walls) so the 10 compartments still fit one row.
+Diagnostics clean. Needs Isaac's Live Server eye on the wagon look (light + dark, desktop +
+phone) along with the rest of round 3.
+
+### v1.4 prototype - round 3c: wagon fully pill-rounded ends - 30 Oct 2026
+Isaac: make the first/last compartments softly rounded. `.qbox-row` `border-radius` 14px ->
+**999px** (pill) on desktop and mobile, so with `overflow:hidden` the two outer compartments
+curve into soft rounded ends while the inner dividing walls stay straight. CSS-only. Diagnostics
+clean. (Flagged to Isaac: check the "1"/"10" digits aren't crowded by the curve on a phone;
+can drop to ~20-24px if so.)
+
+### v1.4 prototype - round 4: hover/tap "hello wave" on the character - 30 Oct 2026
+Isaac asked that hovering/touching the progress-line character makes it enlarge with a
+"hello/wave" animation. CSS + a little JS (`ui.js`, `styles.css`), still `1.4.0-proto`:
+- **Runner made interactive:** `pointer-events: auto` + `cursor: pointer` on `.runner` (its inner
+  `svg` keeps `pointer-events:none`). It sits in the headroom ABOVE the boxes, clear of the answer
+  buttons, so this doesn't affect gameplay taps. Given `role="button" tabindex="0"` +
+  `aria-label="Say hello to your character"` and a `:focus-visible` outline for keyboard users.
+  Moved `aria-hidden` off `.qboard` onto just the decorative `.qbox-row` so the now-interactive
+  runner isn't inside an aria-hidden container.
+- **Greet animation** (`runnerGreet`): zooms the character to ~1.35x, lifts it slightly and rocks
+  it side to side like a wave. **Desktop:** plays while hovered (`@media (hover:hover)`).
+  **Touch/keyboard:** `wireRunnerGreet()` adds a `.greet` class for one play on click/tap/Enter/
+  Space, then re-arms. Only fires when idle (`data-mood="idle"` + `:not(.react)`), so the
+  hop/stumble reactions always take priority.
+- **Reduced motion:** the wave is disabled by the global block; added a targeted static
+  `scale(1.2)` on hover (reduced-motion + hover) so the character still reads as interactive.
+  The 1.35x zoom grows up into the board's 38px headroom, so it isn't clipped.
+Diagnostics clean (ui.js, styles.css). Needs Isaac's Live Server check: hover on desktop and tap
+on mobile both make the character enlarge + wave; it doesn't block answering; reactions still win.
+
+### v1.4 prototype - round 5: user-prompted update ("new version available") toast - 30 Oct 2026
+Isaac asked: if an installed user opens the app and it's still showing an older version, show a
+pop-up offering to update (rather than the silent auto-reload). Agreed UX: a small **bottom
+toast**, and **dismiss hides it for this session** (reappears next launch while an update is
+still waiting). Changed the SW update model from "auto-skip-waiting + silent reload" to
+"**wait + prompt the user**". Still prototype-only (`1.4.0-proto`).
+
+**Changes (all in `prototypes/`):**
+- **`sw.js`** - **removed `self.skipWaiting()` from install**, so a new worker WAITS instead of
+  taking over silently. Added a `message` listener: on `{type:'SKIP_WAITING'}` from the page it
+  calls `skipWaiting()` (so the user's "Update" tap activates it). `clients.claim()` in activate
+  kept.
+- **`app.js`** - reworked SW registration into `registerServiceWorker()`: registers, calls
+  `reg.update()`, and detects an update via `reg.waiting` (already downloaded) or
+  `updatefound` -> `installing` -> `statechange === 'installed'` **with an existing controller**
+  (so it only prompts on a genuine update, not first install). On detect it calls
+  `ui.showUpdateToast(...)`. The `controllerchange` one-time reload is kept, but now it only
+  fires AFTER the user accepts (because the worker no longer self-skips).
+- **`ui.js`** - new `showUpdateToast({onUpdate, onDismiss})`: a `role="status"` bottom toast
+  ("A new version of MathFun is ready.") with an **Update** button (posts SKIP_WAITING via the
+  app.js handler, then the SW activates -> controllerchange -> reload) and a **Later** button
+  (slides the toast away for this session). Update button takes focus; guards against stacking.
+- **`styles.css`** - `.update-toast` bottom banner (theme-tinted, brand border, slide-up,
+  `z-index:70` above confetti, safe-area aware, mobile-tightened). Reduced-motion: the global
+  block disables the slide; the JS removes the node via a timeout fallback so it still works.
+
+**Important honest caveat (one-release lag - logged for the port):** the waiting+toast behaviour
+lives in the NEW worker. Users currently on live run the OLD v1.3.3 worker (which still
+auto-skip-waits), so when **v1.4.0** is pushed they'll get it via the old **silent auto-reload**,
+NOT the toast. The toast takes effect from the release AFTER the one that introduces it - i.e.
+the first time users will actually SEE the prompt is the next release after v1.4.0 (e.g. v1.4.1).
+This is inherent to how SW updates work (the installed worker governs the current transition),
+not a bug. Verify the toast itself on Live Server by editing sw.js twice (change the cache name)
+to force a second, waiting worker.
+
+Diagnostics clean (app.js, ui.js, sw.js, styles.css). Needs Isaac's Live Server check of the
+toast appearing, Update reloading into the new version, and Later dismissing for the session.
+
+## v1.4.0 port to live + release - 30 Oct 2026
+Isaac signed off the prototype batch and asked to push to the live app + do the GitHub
+formalities. Ported the finalized v1.4 work from `prototypes/` into the app root in one pass.
+
+**Ported (surgical, not a blind copy - kept the live v1.3.3 a11y improvements):**
+- **New files:** `js/sprites.js` (15 inline-SVG characters) and `js/confetti.js` (canvas burst),
+  copied verbatim from the prototype.
+- **`js/themes.js`** - added the 5 new themes + extended `THEME_ORDER` (now 15).
+- **`js/sound.js`** - added the 5 new per-theme tunes.
+- **`js/ui.js`** - `renderPlayShell` now builds the 10-box wagon board + runner; added
+  `positionRunnerToBox` / `setActiveBox` / `markBox` / `runnerReact` / `wireRunnerGreet`;
+  `renderQuestion` drives the box hop; `showFeedback(... , questionIndex)` marks the box + fires
+  hop/stumble + small confetti; `renderResults` fires the bigger results confetti; added
+  `showUpdateToast`. **Kept the live v1.3.3 a11y lines** (`aria-label="Answer N: value"`,
+  `role="status"` progress text, `aria-live` question) - the prototype branch didn't have these,
+  so this was ported by hand rather than overwriting.
+- **`js/app.js`** - `APP_VERSION -> 1.4.0`; both `renderPlayShell` calls pass `state.getSkin()`;
+  `showFeedback` gets `round.index`; replaced the SW registration with the waiting-worker + toast
+  version (`registerServiceWorker` / `showUpdateToast`). The prototype's **dev-only `testToast`
+  helper was deliberately NOT ported** (grep-confirmed absent from live).
+- **`styles.css`** - rewritten from the finalized prototype stylesheet with the prototype-only
+  `.proto-banner` block removed and the header comment de-"prototype"d; includes the board/wagon
+  (pill ends), runner idle/hop/stumble/greet, confetti canvas, and the update toast.
+- **`sw.js`** - removed `skipWaiting()` from install; added the `{type:'SKIP_WAITING'}` message
+  handler; added `./js/sprites.js` + `./js/confetti.js` to the precache; `VERSION -> 1.4.0`
+  (cache `mathfun-v1.4.0`). `clients.claim()` kept.
+- **`index.html`** - Help copy updated (new themes + the character/board/greet explanation);
+  production head + footer (`Nathan J Gera`) untouched.
+- **Docs:** README v1.4.0 changelog entry; SPEC requirements/design/tasks status -> v1.4.0
+  code-complete; userguide -> 15 themes + the play-screen character note.
+
+**No data-model change:** `settings.skin` already existed (v1.3) and `state.getSkin()` returns a
+safe default, so the 5 new theme keys are simply selectable; no migration needed. Storage stays
+`mathfun_`.
+
+**Verification:** all live JS/CSS pass diagnostics with zero errors; grep confirms NO
+`testToast` / `DEV-ONLY` / `proto-banner` / `mathfunproto` leftovers in the shipped files;
+`APP_VERSION` and sw `VERSION` both `1.4.0` (cache `mathfun-v1.4.0`). As always a browser couldn't
+be run in this Windows/Kiro shell, so the usual visual/live verification is Isaac's to do after
+deploy.
+
+**Update-prompt one-release lag (reminder):** existing installed users (on the OLD v1.3.3 worker,
+which auto-skip-waited) will receive v1.4.0 via the previous **silent** reload, not the new toast.
+The "new version available" toast first shows for users on the release AFTER v1.4.0.
+
+**Git formalities:** committed on `main` with all v1.4 files (12 modified + 2 new). **Push is
+pending Isaac's explicit go-ahead** (held per git-safety). Next: Isaac pushes (or approves push),
+GitHub Pages redeploys, Isaac verifies on the hosted site + a real installed-PWA check, then
+`Ideas.md` flips **In Progress -> Built (MathFun v1.4.0)** on his sign-off.

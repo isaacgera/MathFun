@@ -1,6 +1,6 @@
 ﻿# MathFun - Design
 
-- **Category:** Learning | **Tier:** Simple | **Status:** Shipped v1.3.0 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes)
+- **Category:** Learning | **Tier:** Simple | **Status:** v1.4.0 code-complete (animated play-screen character on a 10-box board + 15 themes + user-prompted update toast); prior shipped v1.3.x (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes)
 - **Stack:** Vanilla HTML/CSS/JS, no build step. **Platform:** mobile-first installable PWA.
 - **Licence:** MIT. **Live:** https://isaacgera.github.io/MathFun/
 

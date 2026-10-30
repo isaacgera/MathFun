@@ -15,7 +15,7 @@ import { getOperation, OPERATIONS, hintFor } from './operations.js';
 import * as funfacts from './funfacts.js';
 import { getTheme, randomThemeAvatar } from './themes.js';
 
-export const APP_VERSION = '1.3.3';
+export const APP_VERSION = '1.4.0';
 
 const screens = {
   who: document.getElementById('screen-who'),
@@ -339,7 +339,7 @@ function startDailyChallenge() {
   if (st.settings.sound) sound.unlock();
   playTune('daily'); // punchy Daily Challenge theme
   round = game.createRound({ challenge: true, op: 'challenge', difficulty: 'mixed' });
-  ui.renderPlayShell(screens.play, { op: 'challenge', difficulty: 'mixed' });
+  ui.renderPlayShell(screens.play, { op: 'challenge', difficulty: 'mixed' }, state.getSkin());
   ui.showScreen('screen-play');
   ui.setTimerVisible(screens.play, false); // challenge is always untimed (hints still help)
   game.nextQ(round);
@@ -358,7 +358,7 @@ function startRound() {
   }
   if (st.settings.sound) sound.unlock();
   round = game.createRound(currentMode());
-  ui.renderPlayShell(screens.play, round.mode);
+  ui.renderPlayShell(screens.play, round.mode, state.getSkin());
   ui.showScreen('screen-play');
   ui.setTimerVisible(screens.play, state.getState().settings.timed);
   game.nextQ(round);
@@ -424,7 +424,7 @@ function answerQuestion(value) {
 
 function finishQuestion(result) {
   const s = state.getState();
-  ui.showFeedback(screens.play, result, round.current.correct, state.activeProfile());
+  ui.showFeedback(screens.play, result, round.current.correct, state.activeProfile(), round.index);
   if (s.settings.sound) { result.correct ? sound.correct() : sound.wrong(); }
   setTimeout(() => {
     const hasNext = game.advance(round);
@@ -535,17 +535,54 @@ function init() {
 
   boot();
 
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then((reg) => { reg.update?.(); }).catch(() => {});
-      let reloaded = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloaded) return;
-        reloaded = true;
-        window.location.reload();
+  registerServiceWorker();
+}
+
+// ---------- Service worker + "update available" toast (v1.4) ----------
+// The SW no longer auto-skips waiting; a new version WAITS and we prompt the user. When they
+// tap "Update", we message the waiting worker to skipWaiting, then reload on controllerchange.
+// If dismissed, the toast hides for this session and reappears next launch (worker stays
+// waiting). Fully progressive: no SW / offline simply means no toast.
+//
+// Note (one-release lag): users currently on the OLD worker (which auto-skip-waited) will get
+// THIS version via the old silent reload, not the toast. The toast first appears for users on
+// the release AFTER this one. This is inherent to how SW handoff works.
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator) || !location.protocol.startsWith('http')) return;
+
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return;
+    reloaded = true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      reg.update?.();
+      // A worker is already waiting (update downloaded on a previous visit) -> prompt now.
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdateToast(reg.waiting);
+      // A new worker started installing -> prompt once installed AND a controller exists
+      // (i.e. this is an update, not the very first install).
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) showUpdateToast(nw);
+        });
       });
-    });
-  }
+    }).catch(() => {});
+  });
+}
+
+let updateToastShown = false;
+function showUpdateToast(worker) {
+  if (updateToastShown || !worker) return;
+  updateToastShown = true;
+  ui.showUpdateToast({
+    onUpdate: () => { worker.postMessage({ type: 'SKIP_WAITING' }); },
+    onDismiss: () => { /* hide for this session; reappears next launch while still waiting */ },
+  });
 }
 
 init();
