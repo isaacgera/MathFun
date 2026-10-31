@@ -2,7 +2,7 @@
 
 - **Category:** Learning
 - **Complexity tier:** Simple
-- **Status:** v1.4.0 code-complete & ported to the live root (animated play-screen character on a 10-box "wagon" board, hop/stumble/greet + confetti, 15 character themes, user-prompted update toast) - committed, awaiting Isaac's deploy + live verify before Ideas.md flips to Built. Prior shipped v1.3.3 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes + app-store metadata + a11y polish). Live - https://isaacgera.github.io/MathFun/
+- **Status:** **Built & shipped - v1.4.0** (+ the 1.4.0a header-icon asset hotfix), live on GitHub Pages and verified by Isaac on mobile. v1.4.0 adds an animated play-screen character on a 10-box "wagon" board (hop/stumble/greet + confetti), 15 character themes, and a user-prompted update toast. `Ideas.md` row = Built (MathFun v1.4.0). Prior shipped v1.3.3 (Add/Sub/Mul/Div + Fun Facts + Daily Challenge + Character Themes + app-store metadata + a11y polish). Live - https://isaacgera.github.io/MathFun/
 - **Live:** https://isaacgera.github.io/MathFun/
 - **Description:** Playful maths game for kids 5-15. Multiplication 1x-20x shipped; v1.1 adds an operation picker (＋ － ✕ ÷) with full Addition & Subtraction (Division coming next). Multi-profile, difficulty levels + pick-a-table, multiple-choice with near-miss distractors, personalised feedback, stars/streaks/badges, mastery grid, sound + music.
 - **Scope (v1):** 3 difficulty levels (Easy 1-5, Medium 1-10, Hard 1-20) + pick-a-table (1-20); 10-question rounds (untimed default + optional Timer); 4-option multiple choice; per-profile rewards, personal best, mastery grid 1x-20x; local-first, mobile-first installable PWA.
@@ -1696,3 +1696,17 @@ already has its own rounded gradient tile, so that CSS box was a redundant secon
 **Status:** v1.4.0 (+ the 1.4.0a asset hotfix) is live on GitHub Pages and Isaac has verified it
 on mobile. Still awaiting his explicit "mark it built" before flipping `Ideas.md`
 In Progress -> Built (per ideas-backlog-sync: Built needs Isaac's sign-off).
+
+### v1.4.0 closeout - 30 Oct 2026
+Isaac verified v1.4.0 (+ the 1.4.0a header-icon hotfix) on mobile and gave the sign-off to mark
+it Built. `Ideas.md` flipped **In Progress -> Built (MathFun v1.4.0)** and its scope line updated
+to describe the shipped 10-box "wagon" board (not the earlier "rides the progress line" wording),
+the tap-to-wave greeting and the update toast. All v1.4 work is committed and pushed to
+`origin/main` (GitHub Pages live). **MathFun v1.4.0 is closed out for now.**
+
+Carry-forward notes for the next MathFun session (if/when resumed):
+- **Google Play packaging** is still the open thread (was in progress pre-v1.4); nothing changed
+  there this round.
+- **Update-toast one-release lag:** existing installed users got v1.4.0 via the old silent
+  reload; the new "update available" toast will first appear on the NEXT release after v1.4.0.
+- The v1.4 prototype sandbox remains at `prototypes/` (git-ignored) if further iteration is wanted.
