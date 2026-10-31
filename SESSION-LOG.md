@@ -1677,3 +1677,22 @@ The "new version available" toast first shows for users on the release AFTER v1.
 pending Isaac's explicit go-ahead** (held per git-safety). Next: Isaac pushes (or approves push),
 GitHub Pages redeploys, Isaac verifies on the hosted site + a real installed-PWA check, then
 `Ideas.md` flips **In Progress -> Built (MathFun v1.4.0)** on his sign-off.
+
+### v1.4.0 post-deploy hotfix - header brand icon box - 30 Oct 2026
+After the v1.4.0 push, Isaac's mobile check found the top-left title icon looked like it was
+"within a box". Root cause (pre-existing, not from v1.4): the `.brand` element is a `<button>`
+with no chrome reset (browser drew default button background/border), AND `.brand-mark` still
+carried a gradient-square background left over from the old text-monogram era - but the icon.svg
+already has its own rounded gradient tile, so that CSS box was a redundant second box behind it.
+- **Fix (`styles.css`):** reset `.brand` button chrome (`background:none; border:none; padding:0;
+  cursor:pointer` + a `:focus-visible` outline) and dropped the `.brand-mark` gradient/size-box so
+  only the SVG logo's own artwork shows.
+- **`sw.js`:** bumped the cache suffix to `mathfun-v1.4.0a` (app VERSION stays 1.4.0 - this is a
+  same-release asset hotfix) so the updated stylesheet reaches installed devices.
+- Committed (`a7e7dfd`) and **pushed to `origin/main`**.
+- Confirmed with Isaac: on mobile (<=560px) the **"MathFun" wordmark is intentionally hidden**
+  (icon-only) to keep the header on one line - unchanged v1.3 behaviour, left as-is by choice.
+
+**Status:** v1.4.0 (+ the 1.4.0a asset hotfix) is live on GitHub Pages and Isaac has verified it
+on mobile. Still awaiting his explicit "mark it built" before flipping `Ideas.md`
+In Progress -> Built (per ideas-backlog-sync: Built needs Isaac's sign-off).

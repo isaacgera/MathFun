@@ -126,6 +126,11 @@ Single version constant `APP_VERSION` in `js/app.js`. On each release, bump it a
   previous silent reload.)
 - New modules `js/sprites.js` (15 characters) and `js/confetti.js`; cache bumped to
   `mathfun-v1.4.0` (now also precaching the two new modules).
+- _Post-deploy asset hotfix (`mathfun-v1.4.0a`):_ fixed the top-left header brand icon appearing
+  inside a redundant box - reset the `.brand` button chrome and removed the leftover `.brand-mark`
+  gradient (the icon SVG already has its own rounded tile). Visual only; app version unchanged.
+  (On narrow phones the "MathFun" wordmark stays intentionally hidden, icon-only, to keep the
+  header on one line.)
 
 ### v1.3.3 - 23 Sep 2026
 - **Accessibility polish (pre-store-submission).** Following a read-only Pre-Live audit and a
