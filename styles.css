@@ -76,13 +76,14 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px var(--space);
 }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 1.3rem; }
-.brand-mark {
-  display: grid; place-items: center;
-  width: 34px; height: 34px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--brand), var(--brand-2));
-  color: #fff; font-weight: 900;
+/* .brand is a <button> (tap = reload home) - strip the native button chrome so no box shows. */
+.brand {
+  display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 1.3rem;
+  background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: inherit; font: inherit;
 }
+.brand:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; }
+/* The mark is the SVG logo itself - no gradient box behind it (that was the old text monogram). */
+.brand-mark { display: block; width: 34px; height: 34px; }
 .brand-name { background: linear-gradient(135deg, var(--brand), var(--brand-2));
   -webkit-background-clip: text; background-clip: text; color: transparent; }
 

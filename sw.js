@@ -10,7 +10,9 @@
 // in activate is kept so the accepted worker controls the page immediately.
 
 const VERSION = '1.4.0';
-const CACHE = `mathfun-v${VERSION}`;
+// Cache-buster suffix: bump this (not the app VERSION) for a same-release asset hotfix so the
+// updated files reach devices. 'a' = brand-mark header-icon box fix (30 Oct 2026).
+const CACHE = `mathfun-v${VERSION}a`;
 
 const ASSETS = [
   './',
